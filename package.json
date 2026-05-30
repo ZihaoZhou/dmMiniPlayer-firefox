@@ -29,6 +29,7 @@
     "test:firefox-regression": "pnpm build:firefox && cross-env FIREFOX_SMOKE_LARGE_DOM=1 FIREFOX_SMOKE_ASSERT_POPUP_MENU=1 FIREFOX_SMOKE_ASSERT_POPUP_OPEN_SETTING=1 FIREFOX_SMOKE_ASSERT_POPUP_RESPONSIVE=1 FIREFOX_SMOKE_ASSERT_FLOAT_BUTTON=1 FIREFOX_SMOKE_TRIGGER_PIP=1 FIREFOX_SMOKE_ASSERT_CONTROLS=1 FIREFOX_SMOKE_ASSERT_SETTING_PANEL=1 pnpm test:firefox-smoke",
     "release": "node ./scripts/release.mjs",
     "archive": "node ./scripts/archive.mjs",
+    "archive:firefox": "pnpm build:firefox && node ./scripts/archive.mjs --target firefox",
     "sizetest": "pnpm build && pnpm archive --size-test",
     "translate": "tsx ./scripts/auto-translate.ts",
     "eslint": "npx eslint",
