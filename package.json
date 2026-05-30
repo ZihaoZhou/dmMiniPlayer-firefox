@@ -1,8 +1,8 @@
 {
-  "name": "dmMiniPlayer",
+  "name": "dmminiplayer-firefox",
   "version": "0.6.61",
-  "license": "MIT",
-  "author": "apades",
+  "license": "CC-BY-NC-4.0",
+  "author": "apades and dmMiniPlayer Firefox contributors",
   "type": "module",
   "private": true,
   "engines": {
@@ -30,6 +30,7 @@
     "release": "node ./scripts/release.mjs",
     "archive": "node ./scripts/archive.mjs",
     "archive:firefox": "pnpm build:firefox && node ./scripts/archive.mjs --target firefox",
+    "archive:firefox-source": "node ./scripts/archiveSource.mjs",
     "sizetest": "pnpm build && pnpm archive --size-test",
     "translate": "tsx ./scripts/auto-translate.ts",
     "eslint": "npx eslint",

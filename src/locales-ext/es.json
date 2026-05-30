@@ -1,9 +1,9 @@
 {
   "appName": {
-    "message": "Reproductor de imagen en imagen Danmaku"
+    "message": "Bilibili Danmaku PiP"
   },
   "appDesc": {
-    "message": "Reproductor de video de imagen en imagen mejorado, admite todos los controles de video, subtítulos, danmaku, etc."
+    "message": "Minirreproductor picture-in-picture para videos de Bilibili en Firefox, con danmaku y controles de reproducción."
   },
   "back": {
     "message": "Volver"

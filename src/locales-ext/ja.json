@@ -1,9 +1,9 @@
 {
   "appName": {
-    "message": "弾幕ピクチャーインピクチャープレイヤー"
+    "message": "Bilibili Danmaku PiP"
   },
   "appDesc": {
-    "message": "強化されたピクチャ イン ピクチャ ビデオ プレーヤー、すべてのビデオ コントロール、字幕、弾幕、PIP サイドバーでのビデオ変更などをサポートします。"
+    "message": "Firefox 向けの Bilibili ピクチャーインピクチャーミニプレイヤー。弾幕表示と再生操作に対応します。"
   },
   "back": {
     "message": "戻る"

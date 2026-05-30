@@ -1,9 +1,9 @@
 {
   "appName": {
-    "message": "Danmaku mini player - picture-in-picture video player"
+    "message": "Bilibili Danmaku PiP"
   },
   "appDesc": {
-    "message": "Enhanced picture in picture video player, support all video controls, subtitle, danmaku, change video in PIP sidebar, etc."
+    "message": "A Firefox picture-in-picture mini player for Bilibili videos, with danmaku overlay and playback controls."
   },
   "back":{
     "message":"backward"

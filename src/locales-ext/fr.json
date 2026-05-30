@@ -1,9 +1,9 @@
 {
   "appName": {
-    "message": "Lecteur image dans l'image Danmaku"
+    "message": "Bilibili Danmaku PiP"
   },
   "appDesc": {
-    "message": "Lecteur vidéo image dans l'image amélioré, prise en charge de toutes les commandes vidéo, sous-titres, danmaku, etc."
+    "message": "Mini lecteur picture-in-picture Firefox pour les vidéos Bilibili, avec danmaku et contrôles de lecture."
   },
   "back": {
     "message": "Retour"

@@ -1,9 +1,9 @@
 {
   "appName": {
-    "message": "彈幕畫中畫播放器"
+    "message": "Bilibili 彈幕畫中畫"
   },
   "appDesc": {
-    "message": "增強畫中畫影片播放器，支援所有影片控制、字幕、彈幕、PIP側邊欄變更Youtube/bilibili影片、取代網頁影片播放器等。"
+    "message": "面向 Firefox 的 Bilibili 畫中畫小窗播放器，支援彈幕疊加和常用播放控制。"
   },
   "back": {
     "message": "後退"

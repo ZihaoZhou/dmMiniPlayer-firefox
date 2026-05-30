@@ -89,6 +89,7 @@ pnpm build:firefox
 pnpm build:firefox
 pnpm test:firefox-regression
 pnpm archive:firefox
+pnpm archive:firefox-source
 ```
 
 如果本机没有全局 `pnpm`，可以临时用：
@@ -103,14 +104,28 @@ npx pnpm@10.23.0 test:firefox-regression
 build/firefox-mv3-prod-<version>.zip
 ```
 
+`pnpm archive:firefox-source` 会从干净的 git `HEAD` 生成 AMO 源码包：
+
+```text
+build/firefox-source-<version>.zip
+```
+
 ## AMO 上架准备
 
-当前已经能生成 Firefox zip，但正式上架前还需要处理这些事项：
+当前已经能生成 Firefox zip。提交 AMO 前建议准备：
 
-- 把 `src/manifest.ts` 里的 `dmminiplayer-firefox@local` 换成最终稳定 add-on ID。
-- 为 AMO 准备源码包和可复现构建说明，因为本项目使用 tsup 打包/压缩。
-- 重新审视权限范围。当前继承上游的 `<all_urls>`，如果只做 Bilibili 版，可以收窄权限以降低审核压力。
 - 补齐商店截图、说明、隐私声明和 reviewer notes。
+- 首次提交前确认 `browser_specific_settings.gecko.id` 没有和已有 AMO 扩展冲突。
+
+因为本项目使用 tsup 打包/压缩，提交 AMO 时需要同时上传源码包。源码包可用
+`pnpm archive:firefox-source` 生成；构建说明和 reviewer notes 见
+[`docs/AMO_REVIEW_NOTES.md`](./docs/AMO_REVIEW_NOTES.md)。
+
+Firefox 构建的权限已收窄到 Bilibili 相关域名：
+
+- content scripts: `*://bilibili.com/*`, `*://*.bilibili.com/*`
+- host permissions: `*://bilibili.com/*`, `*://*.bilibili.com/*`,
+  `*://*.hdslb.com/*`
 
 相关文档：
 
@@ -120,8 +135,10 @@ build/firefox-mv3-prod-<version>.zip
 
 ## 隐私
 
-本扩展不收集、不存储、不出售用户数据。Firefox manifest 中的数据声明为
-`required: ["none"]`。
+本扩展不向扩展开发者收集、存储、出售或共享用户数据。扩展会请求 Bilibili
+相关接口来获取视频信息、播放列表、弹幕和静态媒体资源。Firefox manifest 中的
+数据声明为 `required: ["none"]`。更完整说明见
+[`docs/PRIVACY.md`](./docs/PRIVACY.md)。
 
 ## 致谢
 

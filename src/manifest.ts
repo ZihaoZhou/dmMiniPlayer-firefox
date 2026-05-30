@@ -1,8 +1,11 @@
 import packageJson from '../package.json'
 import {
   FIREFOX_ADDON_ID,
+  FIREFOX_BILIBILI_HOST_PERMISSIONS,
   FIREFOX_CONTENT_SCRIPT_PLAN,
   FIREFOX_MIN_VERSION,
+  FIREFOX_WEB_ACCESSIBLE_RESOURCE_MATCHES,
+  FIREFOX_WEB_ACCESSIBLE_RESOURCES,
 } from './shared/firefox'
 
 const version = packageJson.version
@@ -14,7 +17,7 @@ export function createManifest(
   const manifest: chrome.runtime.ManifestV3 = {
     name: '__MSG_appName__',
     description: '__MSG_appDesc__',
-    author: 'apades' as any,
+    author: 'apades and dmMiniPlayer Firefox contributors' as any,
     manifest_version: 3,
     homepage_url: 'https://github.com/apades/dmMiniPlayer',
     version,
@@ -132,13 +135,22 @@ export function createManifest(
     return manifest
   }
 
+  manifest.host_permissions = [...FIREFOX_BILIBILI_HOST_PERMISSIONS]
+  delete manifest.homepage_url
   manifest.permissions = Array.from(
     new Set([...(manifest.permissions ?? []), 'scripting']),
   )
 
   manifest.content_scripts = FIREFOX_CONTENT_SCRIPT_PLAN.map((script) => ({
     ...script,
+    matches: [...script.matches],
   })) as any
+  manifest.web_accessible_resources = [
+    {
+      resources: [...FIREFOX_WEB_ACCESSIBLE_RESOURCES],
+      matches: [...FIREFOX_WEB_ACCESSIBLE_RESOURCE_MATCHES],
+    },
+  ]
 
   return {
     ...manifest,
