@@ -1,6 +1,7 @@
 import { WebProvider } from '@root/core/WebProvider'
 import onRouteChange from '@root/inject/csUtils/onRouteChange'
 import DanmakuSender from '@root/core/danmaku/DanmakuSender'
+import { setDiagnosticAttr } from '@root/shared/diagnostics'
 import { dq, dq1, switchLatest, tryCatch } from '@root/utils'
 import { SideSwitcher } from '@root/core/SideSwitcher'
 import { VideoItem } from '@root/components/VideoPlayer/Side'
@@ -123,40 +124,34 @@ export default class BilibiliVideoProvider extends WebProvider {
   }
 
   getDanmakus = switchLatest(async () => {
-    document.documentElement.setAttribute('dm-bili-danmaku-info-stage', 'start')
+    setDiagnosticAttr('dm-bili-danmaku-info-stage', 'start')
     const { aid, cid } = isFirefoxTarget
       ? await getVideoInfoFromUrlInPageWorld(location.href)
       : await getVideoInfoFromUrl(location.href)
-    document.documentElement.setAttribute('dm-bili-danmaku-info-stage', 'done')
-    document.documentElement.setAttribute('dm-bili-danmaku-info-aid', String(aid))
-    document.documentElement.setAttribute('dm-bili-danmaku-info-cid', String(cid))
+    setDiagnosticAttr('dm-bili-danmaku-info-stage', 'done')
+    setDiagnosticAttr('dm-bili-danmaku-info-aid', String(aid))
+    setDiagnosticAttr('dm-bili-danmaku-info-cid', String(cid))
 
     const danmakus = await getDanmakus(aid, cid)
     return danmakus
   })
   async initDanmakus() {
-    document.documentElement.setAttribute('dm-bili-danmaku-state', 'loading')
+    setDiagnosticAttr('dm-bili-danmaku-state', 'loading')
     const [err, danmakus] = await tryCatch(() => this.getDanmakus())
 
     if (err) {
-      document.documentElement.setAttribute('dm-bili-danmaku-state', 'error')
-      document.documentElement.setAttribute(
+      setDiagnosticAttr('dm-bili-danmaku-state', 'error')
+      setDiagnosticAttr(
         'dm-bili-danmaku-error',
         err.message || String(err),
       )
       toast.error(t('error.danmakuLoad'))
     } else {
-      document.documentElement.setAttribute('dm-bili-danmaku-state', 'fetched')
-      document.documentElement.setAttribute(
-        'dm-bili-danmaku-count',
-        String(danmakus.length),
-      )
+      setDiagnosticAttr('dm-bili-danmaku-state', 'fetched')
+      setDiagnosticAttr('dm-bili-danmaku-count', String(danmakus.length))
       await this.danmakuEngine?.setDanmakus(danmakus)
-      document.documentElement.setAttribute('dm-bili-danmaku-state', 'loaded')
-      document.documentElement.setAttribute(
-        'dm-bili-danmaku-count',
-        String(danmakus.length),
-      )
+      setDiagnosticAttr('dm-bili-danmaku-state', 'loaded')
+      setDiagnosticAttr('dm-bili-danmaku-count', String(danmakus.length))
     }
   }
 

@@ -6,7 +6,6 @@ const path = require('path')
 const { Builder, By, until } = require('selenium-webdriver')
 const firefox = require('selenium-webdriver/firefox')
 
-const ADDON_ID = 'dmminiplayer-firefox@local'
 const ROOT_DIR = path.resolve(__dirname, '..')
 const DIST_DIR = path.join(ROOT_DIR, 'dist')
 const GECKODRIVER_BIN =
@@ -14,6 +13,7 @@ const GECKODRIVER_BIN =
   path.join(ROOT_DIR, 'node_modules/.bin/geckodriver')
 const FIREFOX_BIN =
   process.env.FIREFOX_BIN || '/Applications/Firefox.app/Contents/MacOS/firefox'
+const MANIFEST_PATH = path.join(DIST_DIR, 'manifest.json')
 
 function assertFile(file, label) {
   if (!fs.existsSync(file)) {
@@ -21,8 +21,30 @@ function assertFile(file, label) {
   }
 }
 
+function readManifest() {
+  assertFile(MANIFEST_PATH, 'Firefox build manifest')
+  return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
+}
+
+function getAddonId() {
+  const addonId = readManifest().browser_specific_settings?.gecko?.id
+  if (!addonId) throw new Error('Firefox add-on id not found in dist manifest')
+  return addonId
+}
+
+function assertDiagnosticsBuild() {
+  const buildInfoPath = path.join(DIST_DIR, 'build-info.json')
+  assertFile(buildInfoPath, 'Firefox build metadata')
+  const buildInfo = JSON.parse(fs.readFileSync(buildInfoPath, 'utf8'))
+  if (!buildInfo.diagnostics) {
+    throw new Error(
+      'Firefox smoke test requires a diagnostics build. Run `pnpm test:firefox-regression` or build with ENABLE_FIREFOX_DIAGNOSTICS=1.',
+    )
+  }
+}
+
 function createXpi() {
-  assertFile(path.join(DIST_DIR, 'manifest.json'), 'Firefox build output')
+  assertFile(MANIFEST_PATH, 'Firefox build output')
   const xpi = path.join(os.tmpdir(), `dmminiplayer-firefox-${Date.now()}.xpi`)
   cp.execFileSync('/usr/bin/zip', ['-qr', xpi, '.'], { cwd: DIST_DIR })
   return xpi
@@ -58,7 +80,7 @@ function createFixtureServer() {
   })
 }
 
-function parseExtensionUuid(profileDir) {
+function parseExtensionUuid(profileDir, addonId) {
   const prefsPath = path.join(profileDir, 'prefs.js')
   if (!fs.existsSync(prefsPath)) return null
   const prefs = fs.readFileSync(prefsPath, 'utf8')
@@ -68,17 +90,17 @@ function parseExtensionUuid(profileDir) {
   if (!match) return null
 
   const jsonText = JSON.parse(`"${match[1]}"`)
-  return JSON.parse(jsonText)[ADDON_ID] || null
+  return JSON.parse(jsonText)[addonId] || null
 }
 
-async function waitForExtensionUuid(profileDir, timeoutMs = 8000) {
+async function waitForExtensionUuid(profileDir, addonId, timeoutMs = 8000) {
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMs) {
-    const uuid = parseExtensionUuid(profileDir)
+    const uuid = parseExtensionUuid(profileDir, addonId)
     if (uuid) return uuid
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
-  throw new Error(`Timed out waiting for ${ADDON_ID} moz-extension UUID`)
+  throw new Error(`Timed out waiting for ${addonId} moz-extension UUID`)
 }
 
 async function readHtmlAttrs(driver) {
@@ -1118,6 +1140,7 @@ async function getSettingPanelSnapshot(driver) {
 async function main() {
   assertFile(GECKODRIVER_BIN, 'geckodriver')
   assertFile(FIREFOX_BIN, 'Firefox binary')
+  assertDiagnosticsBuild()
 
   const xpi = createXpi()
   const profileDir = fs.mkdtempSync(
@@ -1145,8 +1168,9 @@ async function main() {
       .setFirefoxService(service)
       .build()
 
+    const expectedAddonId = getAddonId()
     const addonId = await driver.installAddon(xpi, true)
-    if (addonId !== ADDON_ID) {
+    if (addonId !== expectedAddonId) {
       throw new Error(`Unexpected add-on id: ${addonId}`)
     }
 
@@ -1158,7 +1182,7 @@ async function main() {
     )
     const targetUrl = await driver.getCurrentUrl()
 
-    const extensionUuid = await waitForExtensionUuid(profileDir)
+    const extensionUuid = await waitForExtensionUuid(profileDir, expectedAddonId)
     const popupMenuProbe = process.env.FIREFOX_SMOKE_ASSERT_POPUP_MENU
       ? await assertPopupMenu(driver, extensionUuid, targetUrl, fixtureHandle)
       : null

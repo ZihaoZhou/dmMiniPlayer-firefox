@@ -1,22 +1,23 @@
 import { ATTR_DISABLE } from '@root/shared/config'
+import { setDiagnosticAttr } from '@root/shared/diagnostics'
 import { LOCALE } from '@root/shared/storeKey'
 import { getBrowserLocalStorage } from '@root/utils/storage'
 
 const ENTRY_ALL_FRAMES_KEY = '__DM_MINI_PLAYER_ENTRY_ALL_FRAMES__'
 
 if ((window as any)[ENTRY_ALL_FRAMES_KEY]) {
-  document.documentElement.setAttribute('dm-entry-all-frames-duplicate', 'true')
+  setDiagnosticAttr('dm-entry-all-frames-duplicate', 'true')
 } else {
   ;(window as any)[ENTRY_ALL_FRAMES_KEY] = true
-  document.documentElement.setAttribute('dm-entry-all-frames-loaded', 'true')
+  setDiagnosticAttr('dm-entry-all-frames-loaded', 'true')
   window.addEventListener('error', (event) => {
-    document.documentElement.setAttribute(
+    setDiagnosticAttr(
       'dm-content-error',
       `${event.message || 'unknown error'} @ ${event.filename}:${event.lineno}`,
     )
   })
   window.addEventListener('unhandledrejection', (event) => {
-    document.documentElement.setAttribute(
+    setDiagnosticAttr(
       'dm-content-rejection',
       String(event.reason?.message || event.reason || 'unknown rejection'),
     )

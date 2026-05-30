@@ -1,9 +1,11 @@
 import Browser from 'webextension-polyfill'
 
+import { setDiagnosticAttr } from '@root/shared/diagnostics'
+
 const CLOG_INJECT_KEY = '__DM_MINI_PLAYER_CLOG_INJECT__'
 
 if ((window as any)[CLOG_INJECT_KEY]) {
-  document.documentElement.setAttribute('dm-clog-inject-duplicate', 'true')
+  setDiagnosticAttr('dm-clog-inject-duplicate', 'true')
 } else {
   ;(window as any)[CLOG_INJECT_KEY] = true
 

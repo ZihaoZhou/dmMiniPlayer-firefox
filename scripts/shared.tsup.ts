@@ -96,6 +96,11 @@ export const shareConfig = {
       ? `"${process.env.NODE_ENV}"`
       : '"development"',
     'process.env.EXTENSION_TARGET': `"${extensionTarget}"`,
+    'process.env.ENABLE_FIREFOX_DIAGNOSTICS':
+      process.env.ENABLE_FIREFOX_DIAGNOSTICS === '1' ||
+      process.env.ENABLE_FIREFOX_DIAGNOSTICS === 'true'
+        ? '"true"'
+        : '"false"',
     ...getDefinesConfig(envFileName, {
       upgrade_en: getChangeLog(version)?.replaceAll('\n', '\\n'),
       upgrade_zh: getChangeLog(version, 'zh')?.replaceAll('\n', '\\n'),

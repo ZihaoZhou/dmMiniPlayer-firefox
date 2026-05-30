@@ -1,92 +1,32 @@
-# 弹幕画中画播放器
-<div align="center">
+# dmMiniPlayer Firefox
 
-[<img src="https://img.shields.io/chrome-web-store/v/nahbabjlllhocabmecfjmcblchhpoclj?label=chrome" />](https://chrome.google.com/webstore/detail/nahbabjlllhocabmecfjmcblchhpoclj)
-[<img src="https://img.shields.io/badge/dynamic/json?label=edge&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fhohfhljppjpiemblilibldgppjpclfbl" />](https://microsoftedge.microsoft.com/addons/detail/hohfhljppjpiemblilibldgppjpclfbl)
-[<img src="https://img.shields.io/github/v/release/apades/dmMiniPlayer?color=green" />](https://github.com/apades/dmMiniPlayer/releases/latest)
+Firefox 版弹幕小窗播放器。这个 fork 基于
+[apades/dmMiniPlayer](https://github.com/apades/dmMiniPlayer)，目标是让
+Bilibili 视频在 Firefox / macOS 上也能用带弹幕的 Document Picture-in-Picture
+小窗播放。
 
-</div>
+当前重点测试目标是 Bilibili 视频页。上游支持的其它站点和功能可能仍然存在，
+但这个 fork 暂不承诺 Firefox 下全部可用。
 
-<p align="center" style="margin-bottom: 0px !important;">
-<img width="800" src="./docs/assets/view.png"><br/>
-</p>
+## 当前状态
 
-支持最新的画中画API功能，可以播放、发送弹幕，支持字幕，键盘控制进度，更好的画中画播放体验的浏览器插件
+- 支持 Firefox MV3 构建。
+- 支持在 Firefox 的 Document Picture-in-Picture 小窗里播放视频和弹幕。
+- 支持小窗内播放控制、设置面板、弹幕设置和基础快捷操作。
+- 页面悬浮按钮已做 Firefox 区分，避免和 Firefox 原生 PiP 按钮混淆。
+- 已有 Firefox smoke/regression 测试覆盖 popup、设置面板、悬浮按钮、DocPiP
+  打开、控制栏和关闭路径。
 
-- [chrome商店<img src="https://img.shields.io/chrome-web-store/v/nahbabjlllhocabmecfjmcblchhpoclj?label=chrome" />](https://chrome.google.com/webstore/detail/nahbabjlllhocabmecfjmcblchhpoclj)
-- [edge商店<img src="https://img.shields.io/badge/dynamic/json?label=edge&query=%24.version&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fhohfhljppjpiemblilibldgppjpclfbl" /> 更新比较慢，如果有什么紧急bug修复一般都要一周后才能上架](https://microsoftedge.microsoft.com/addons/detail/hohfhljppjpiemblilibldgppjpclfbl)
-- [最新发布<img src="https://img.shields.io/github/v/release/apades/dmMiniPlayer?color=green" />](https://github.com/apades/dmMiniPlayer/releases/latest)
+## 已知限制
 
+Firefox 的 Document Picture-in-Picture 目前表现为一个小型浏览器窗口，不是
+Chrome 那种更接近原生无边框的 PiP surface。扩展可以控制窗口内的播放器内容，
+但不能通过 WebExtension 隐藏 Firefox 自己的窗口标题栏、地址栏或 macOS
+红黄绿按钮。
 
-在提问前可以先搜索issue是否有类似的问题，或者先看看[FAQ](https://github.com/apades/dmMiniPlayer/wiki/FAQ%E2%80%90zh)
-
-如果你有什么问题或者功能提议，请到[issues](https://github.com/apades/dmMiniPlayer/issues)里提出
-
-## 🚀 功能
-- 拖拽或者键盘控制画中画窗口的进度条、音量、播放速率等
-- 弹幕播放和发送
-  - bilibili视频 + 直播
-  - 斗鱼直播
-  - 动画疯
-  - 虎牙直播 *
-  - youtube直播 *
-  - twitch直播 *
-  - 抖音直播 *
-- 针对 bilibili、Youtube、Netflix 的特殊功能支持
-  - 视频播放侧边栏，可直接在画中画里切换播放列表、推荐视频
-  - 网站的字幕列表
-  - 进度条的预览功能(Netflix暂不支持)
-- 支持外挂.xml .ass弹幕文件，下载可以使用[Bilibili-Evolved](https://github.com/the1812/Bilibili-Evolved)或[ACG助手](https://chromewebstore.google.com/detail/kpbnombpnpcffllnianjibmpadjolanh)，也可以通过输入bilibili url的下载弹幕并播放
-- 字幕功能
-  - 支持.srt .ass外挂功能
-  - 字幕翻译 + 双语功能
-- 长按右键倍速，逐帧快进快退，截屏等功能 + 可自定快捷键
-- 将网页视频播放器替换为扩展程序的视频播放器
-- 支持绝大多数 https 网站，甚至支持类似Crunchyroll的[EME](https://web.dev/articles/media-eme)版权保护视频、Youtube 嵌入视频。
-
-> [!NOTE]
-> *标记为目前只有监听网页弹幕DOM模式，可能会有意料之外的问题
-
-## How to Dev
-### env
-- pnpm >=10.0.0
-- node >=24.11.0
-
-> [!WARNING]
-> If you are using Windows, please make sure you have Unix utils in your env (rm sh etc.)
-> 
-> Or use WSL, or download [cmder](https://cmder.app/)
-
-### dev
-```bash
-pnpm i
-pnpm run dev
-```
-Drag `dist` folder and drop to `chrome://extensions/` page in Chrome (Open development mode before)
-
-### Firefox build
-```bash
-pnpm i
-pnpm build:firefox
-```
-
-Open `about:debugging#/runtime/this-firefox`, click `Load Temporary Add-on...`,
-and select `dist/manifest.json`.
-
-Run the Firefox smoke regression:
-
-```bash
-pnpm test:firefox-regression
-```
-
-### Firefox Document PiP window chrome
-
-Firefox's Document Picture-in-Picture implementation currently opens a small
-browser window instead of a fully borderless native PiP surface. The extension
-can render the video and danmaku inside that window, but it cannot hide Firefox's
-own URL/title chrome.
-
-Advanced users can hide most of the Firefox toolbar with `userChrome.css`:
+地址栏和工具栏可以通过 Firefox 的 `userChrome.css` 做用户侧隐藏。macOS
+原生标题栏和红黄绿按钮不能靠扩展或 `userChrome.css` 彻底移除，需要浏览器侧
+改动。
 
 ```css
 /* dmMiniPlayer Firefox Document PiP chrome cleanup - begin */
@@ -116,51 +56,89 @@ Advanced users can hide most of the Firefox toolbar with `userChrome.css`:
 /* dmMiniPlayer Firefox Document PiP chrome cleanup - end */
 ```
 
-On macOS this does not remove the native window title bar or traffic-light
-buttons. Removing that part would require a browser-side change.
+## 临时安装
 
-## 📚 主要实现方法
-### 旧版本PIP
-用一个单独canvas画video + 弹幕，再把canvas的stream附加到一个单独的video上，最后开启画中画功能
+```bash
+pnpm i
+pnpm build:firefox
+```
 
-### 新版本docPIP
-使用了[documentPictureInPicture](https://developer.chrome.com/docs/web-platform/document-picture-in-picture/)该API，关于[技术细节在这](https://github.com/apades/dmMiniPlayer/wiki/tech%E2%80%90zh)
+然后打开 Firefox：
 
-> [!NOTE]
-> 该API是[非w3c草案功能](https://wicg.github.io/document-picture-in-picture/)，从chrome 116开始已经强推到stable上了，[非chromium](https://caniuse.com/?search=document-picture-in-picture)目前还没看到能用的，所以其他内核浏览器不打算支持
-> 
-> 如果你是360 qq浏览器这种套壳Chromium的且没有该API，地址栏到`chrome://flags/#document-picture-in-picture-api`查看是否支持开启
+1. 进入 `about:debugging#/runtime/this-firefox`
+2. 点击 `Load Temporary Add-on...`
+3. 选择 `dist/manifest.json`
 
-> [!WARNING]
-> 如果你使用edge打开有红色tab栏，建议升级到`126.0.2592.102`版本以上
+临时安装在 Firefox 重启后会失效。正式使用需要 AMO 签名版。
 
+安装后在 Bilibili 视频页点击扩展图标，选择 `Open danmaku mini player`。
+如果页面是在安装前已经打开的，扩展会尝试补注入脚本；失败时刷新页面再试。
 
-## 💖 引用代码
-非常感谢这些项目的开源，让我抄了不少代码节省了很多时间
+## 开发
 
-- [bilibili-evaolved](https://github.com/the1812/Bilibili-Evolved)
-- [douyu-monitor](https://github.com/qianjiachun/douyu-monitor)
+环境要求：
+
+- Node.js >= 24.11.0
+- pnpm >= 10.0.0
+- Firefox
+- geckodriver，仓库依赖里已锁定
+
+常用命令：
+
+```bash
+pnpm build:firefox
+pnpm test:firefox-regression
+pnpm archive:firefox
+```
+
+如果本机没有全局 `pnpm`，可以临时用：
+
+```bash
+npx pnpm@10.23.0 test:firefox-regression
+```
+
+`pnpm archive:firefox` 会生成：
+
+```text
+build/firefox-mv3-prod-<version>.zip
+```
+
+## AMO 上架准备
+
+当前已经能生成 Firefox zip，但正式上架前还需要处理这些事项：
+
+- 把 `src/manifest.ts` 里的 `dmminiplayer-firefox@local` 换成最终稳定 add-on ID。
+- 为 AMO 准备源码包和可复现构建说明，因为本项目使用 tsup 打包/压缩。
+- 重新审视权限范围。当前继承上游的 `<all_urls>`，如果只做 Bilibili 版，可以收窄权限以降低审核压力。
+- 补齐商店截图、说明、隐私声明和 reviewer notes。
+
+相关文档：
+
+- <https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/>
+- <https://extensionworkshop.com/documentation/publish/source-code-submission/>
+- <https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/>
+
+## 隐私
+
+本扩展不收集、不存储、不出售用户数据。Firefox manifest 中的数据声明为
+`required: ["none"]`。
+
+## 致谢
+
+这个 fork 的主体代码来自
+[apades/dmMiniPlayer](https://github.com/apades/dmMiniPlayer)。感谢上游作者和
+原项目中引用的开源项目，尤其是弹幕解析、播放器 UI、Bilibili 数据获取和
+Document Picture-in-Picture 实现相关代码。
+
+上游项目引用过的主要开源项目包括：
+
+- [Bilibili-Evolved](https://github.com/the1812/Bilibili-Evolved)
 - [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
-- [rc-slider](http://github.com/react-component/slider)
+- [rc-slider](https://github.com/react-component/slider)
 - [js-cookie](https://github.com/js-cookie/js-cookie)
-- [esbuild-plugin-inline-import](https://github.com/claviska/esbuild-plugin-inline-import)
-- [tsup](https://github.com/egoist/tsup/blob/796fc5030f68f929fecde7c94732e9a586ba7508/src/esbuild/postcss.ts)
-- [tailwindcss-container-queries](https://github.com/tailwindlabs/tailwindcss-container-queries)
-- [ts-key-enum](https://www.npmjs.com/package/ts-key-enum)
+- [tsup](https://github.com/egoist/tsup)
 - [@ironkinoko/danmaku](https://github.com/IronKinoko/danmaku)
-- [netflix-subtitle-downloader](https://greasyfork.org/en/scripts/26654-netflix-subtitle-downloader)
 
-## 🍔 投喂
-如果您很喜欢这个项目, 欢迎打赏, 金额随意. 您的支持是我的动力(=・ω・=)
+## License
 
-<img src="./docs/assets/donate.png" width="300">
-
-> 🙏 thanks list
-> 
-> - 2025/3/4 我爱吃肉
-> - 2025/6/9 zzzzz
-> - 2025/7/2 真空
-> - 2025/9/18 匿名用户
-
-## 📜 License
-[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
+Upstream license: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)

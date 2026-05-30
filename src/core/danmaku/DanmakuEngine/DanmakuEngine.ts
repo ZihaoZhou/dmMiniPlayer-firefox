@@ -1,4 +1,5 @@
 import configStore from '@root/store/config'
+import { setDiagnosticAttr } from '@root/shared/diagnostics'
 import { createElement, minmax } from '@root/utils'
 import Events2 from '@root/utils/Events2'
 import { autorun, makeObservable, runInAction } from 'mobx'
@@ -147,7 +148,7 @@ export default abstract class DanmakuEngine extends Events2<DanmakuEngineEvents>
 
   init(props: DanmakuEngineInitProps) {
     if (this.initd) return
-    document.documentElement.setAttribute('dm-danmaku-engine-init', 'start')
+    setDiagnosticAttr('dm-danmaku-engine-init', 'start')
     this.resizeObserver.unobserve(this.container)
     // 处理弹幕偏移时间
     this.unloadCallbacks.push(
@@ -168,7 +169,7 @@ export default abstract class DanmakuEngine extends Events2<DanmakuEngineEvents>
     this.resizeObserver.observe(this.container)
     this.initd = true
     this.initLock.ok()
-    document.documentElement.setAttribute('dm-danmaku-engine-init', 'ok')
+    setDiagnosticAttr('dm-danmaku-engine-init', 'ok')
   }
 
   runningDanmakus = new Set<DanmakuBase>()

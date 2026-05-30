@@ -1,4 +1,9 @@
 import packageJson from '../package.json'
+import {
+  FIREFOX_ADDON_ID,
+  FIREFOX_CONTENT_SCRIPT_PLAN,
+  FIREFOX_MIN_VERSION,
+} from './shared/firefox'
 
 const version = packageJson.version
 export type ExtensionTarget = 'chrome' | 'firefox'
@@ -131,23 +136,9 @@ export function createManifest(
     new Set([...(manifest.permissions ?? []), 'scripting']),
   )
 
-  manifest.content_scripts = manifest.content_scripts?.flatMap((script) => {
-    if (script.js?.[0] !== 'entry-all-frames.js') return script
-    return [
-      {
-        ...script,
-        js: ['entry-all-frames.js'],
-      },
-      {
-        ...script,
-        js: ['clogInject.js'],
-      },
-      {
-        ...script,
-        js: ['main.js'],
-      },
-    ]
-  })
+  manifest.content_scripts = FIREFOX_CONTENT_SCRIPT_PLAN.map((script) => ({
+    ...script,
+  })) as any
 
   return {
     ...manifest,
@@ -157,8 +148,8 @@ export function createManifest(
     } as any,
     browser_specific_settings: {
       gecko: {
-        id: 'dmminiplayer-firefox@local',
-        strict_min_version: '151.0',
+        id: FIREFOX_ADDON_ID,
+        strict_min_version: FIREFOX_MIN_VERSION,
         data_collection_permissions: {
           required: ['none'],
         },

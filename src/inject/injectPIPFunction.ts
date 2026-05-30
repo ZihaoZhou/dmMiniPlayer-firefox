@@ -1,10 +1,39 @@
 import { ATTR_DISABLE_INJECT_PIP, VIDEO_ID_ATTR } from '@root/shared/config'
+import {
+  formatDiagnosticError,
+  setDiagnosticAttr,
+} from '@root/shared/diagnostics'
 import PostMessageEvent from '@root/shared/postMessageEvent'
 import { tryCatch, uuid, wait } from '@root/utils'
 import { postStartPIPDataMsg } from '@root/utils/pip'
 import { onPostMessage, postMessageToTop } from '@root/utils/windowMessages'
 
 let hasInit = false
+let pendingDocPIPAppendCount = 0
+const docPIPRootIdPattern = /^dm-docpip-root-[a-z0-9-]+$/i
+
+function isBilibiliHost(hostname: string) {
+  return hostname === 'bilibili.com' || hostname.endsWith('.bilibili.com')
+}
+
+function assertBilibiliPage() {
+  if (!isBilibiliHost(location.hostname)) {
+    throw new Error('Bilibili page-world request is only allowed on Bilibili')
+  }
+}
+
+function assertBilibiliUrl(url: URL) {
+  if (!isBilibiliHost(url.hostname)) {
+    throw new Error('Bilibili request URL host is not allowed')
+  }
+}
+
+function assertDocPIPRootId(id: string) {
+  if (!docPIPRootIdPattern.test(id)) {
+    throw new Error('Invalid DocPiP root id')
+  }
+}
+
 function main() {
   if (hasInit) return
   hasInit = true
@@ -34,13 +63,15 @@ function main() {
   }
 
   onPostMessage(PostMessageEvent.openDocPIPWindow, async (data) => {
-    document.documentElement.setAttribute('dm-docpip-main-open-request', data.id)
+    setDiagnosticAttr('dm-docpip-main-open-request', data.id)
     try {
+      assertDocPIPRootId(data.id)
       const pipWindow = await window.documentPictureInPicture.requestWindow({
         width: data.width,
         height: data.height,
       })
-      document.documentElement.setAttribute('dm-docpip-main-opened', 'true')
+      pendingDocPIPAppendCount += 1
+      setDiagnosticAttr('dm-docpip-main-opened', 'true')
       postMessageToTop(PostMessageEvent.openDocPIPWindow_resp, {
         id: data.id,
         isOk: true,
@@ -48,36 +79,32 @@ function main() {
         innerHeight: pipWindow.innerHeight,
       })
     } catch (error) {
-      document.documentElement.setAttribute(
-        'dm-docpip-main-open-error',
-        ((error as any)?.toString && (error as any).toString()) ||
-          (error as Error)?.message ||
-          String(error),
-      )
+      setDiagnosticAttr('dm-docpip-main-open-error', formatDiagnosticError(error))
       postMessageToTop(PostMessageEvent.openDocPIPWindow_resp, {
         id: data.id,
         isOk: false,
-        errMsg:
-          ((error as any)?.toString && (error as any).toString()) ||
-          (error as Error)?.message ||
-          String(error),
+        errMsg: formatDiagnosticError(error),
       })
     }
   })
 
   onPostMessage(PostMessageEvent.appendDocPIPRoot, (data) => {
-    document.documentElement.setAttribute('dm-docpip-main-request', data.id)
+    setDiagnosticAttr('dm-docpip-main-request', data.id)
     try {
+      assertDocPIPRootId(data.id)
+      if (pendingDocPIPAppendCount < 1) {
+        throw new Error('DocPiP root append was not opened by this session')
+      }
       const playerEl = document.getElementById(data.id)
       if (!playerEl) throw new Error(`DocPiP root not found: ${data.id}`)
 
-      document.documentElement.setAttribute('dm-docpip-main-found-root', 'true')
+      setDiagnosticAttr('dm-docpip-main-found-root', 'true')
       const pipDocument = window.documentPictureInPicture?.window?.document
       if (!pipDocument?.body) throw new Error('DocPiP document is not ready')
 
-      document.documentElement.setAttribute('dm-docpip-main-has-document', 'true')
+      setDiagnosticAttr('dm-docpip-main-has-document', 'true')
       pipDocument.body.appendChild(playerEl)
-      document.documentElement.setAttribute('dm-docpip-main-appended', 'true')
+      setDiagnosticAttr('dm-docpip-main-appended', 'true')
       if (data.styleText) {
         playerEl.setAttribute('style', data.styleText)
       } else {
@@ -89,28 +116,23 @@ function main() {
         isOk: true,
         bodyChildren: pipDocument.body.children.length,
       })
+      pendingDocPIPAppendCount -= 1
     } catch (error) {
-      document.documentElement.setAttribute(
-        'dm-docpip-main-error',
-        ((error as any)?.toString && (error as any).toString()) ||
-          (error as Error)?.message ||
-          String(error),
-      )
+      setDiagnosticAttr('dm-docpip-main-error', formatDiagnosticError(error))
       postMessageToTop(PostMessageEvent.appendDocPIPRoot_resp, {
         id: data.id,
         isOk: false,
-        errMsg:
-          ((error as any)?.toString && (error as any).toString()) ||
-          (error as Error)?.message ||
-          String(error),
+        errMsg: formatDiagnosticError(error),
       })
     }
   })
 
   onPostMessage(PostMessageEvent.bilibiliVideoInfo, async (data) => {
-    document.documentElement.setAttribute('dm-bili-main-info-request', data.id)
+    setDiagnosticAttr('dm-bili-main-info-request', data.id)
     try {
+      assertBilibiliPage()
       const url = new URL(data.url)
+      assertBilibiliUrl(url)
       const pid = +(url.searchParams.get('p') ?? 1)
       const urlPathnameArr = url.pathname.split('/')
       const bidParam = urlPathnameArr.find((p) => /^bv/i.test(p[0] + p[1]))
@@ -125,19 +147,16 @@ function main() {
         videoInfo.searchParams.set('aid', aidParam.replace(/av/i, ''))
       }
 
-      document.documentElement.setAttribute(
-        'dm-bili-main-info-url',
-        videoInfo.toString(),
-      )
+      setDiagnosticAttr('dm-bili-main-info-url', videoInfo.toString())
       const res = await fetch(videoInfo.toString(), {
         credentials: 'include',
       }).then((response) => response.json())
       const info = res.data
       const pages = info.pages ?? []
       const cid = pid === 1 ? info.cid : pages[pid - 1]?.cid || info.cid
-      document.documentElement.setAttribute('dm-bili-main-info-done', data.id)
-      document.documentElement.setAttribute('dm-bili-main-info-aid', info.aid)
-      document.documentElement.setAttribute('dm-bili-main-info-cid', cid)
+      setDiagnosticAttr('dm-bili-main-info-done', data.id)
+      setDiagnosticAttr('dm-bili-main-info-aid', info.aid)
+      setDiagnosticAttr('dm-bili-main-info-cid', cid)
       postMessageToTop(PostMessageEvent.bilibiliVideoInfo_resp, {
         id: data.id,
         isOk: true,
@@ -146,27 +165,21 @@ function main() {
         cid,
       })
     } catch (error) {
-      document.documentElement.setAttribute(
-        'dm-bili-main-info-error',
-        ((error as any)?.toString && (error as any).toString()) ||
-          (error as Error)?.message ||
-          String(error),
-      )
+      setDiagnosticAttr('dm-bili-main-info-error', formatDiagnosticError(error))
       postMessageToTop(PostMessageEvent.bilibiliVideoInfo_resp, {
         id: data.id,
         isOk: false,
-        errMsg:
-          ((error as any)?.toString && (error as any).toString()) ||
-          (error as Error)?.message ||
-          String(error),
+        errMsg: formatDiagnosticError(error),
       })
     }
   })
 
   onPostMessage(PostMessageEvent.bilibiliDanmaku, async (data) => {
-    document.documentElement.setAttribute('dm-bili-main-danmaku-request', data.id)
-    document.documentElement.setAttribute('dm-bili-main-danmaku-cid', data.cid)
+    setDiagnosticAttr('dm-bili-main-danmaku-request', data.id)
+    setDiagnosticAttr('dm-bili-main-danmaku-cid', data.cid)
     try {
+      assertBilibiliPage()
+      if (!/^\d+$/.test(data.cid)) throw new Error('Invalid Bilibili cid')
       const xmlText = await fetch(
         `https://api.bilibili.com/x/v1/dm/list.so?oid=${data.cid}`,
         {
@@ -192,8 +205,8 @@ function main() {
         .filter(Boolean)
         .sort((a, b) => a!.time - b!.time)
 
-      document.documentElement.setAttribute('dm-bili-main-danmaku-done', data.id)
-      document.documentElement.setAttribute(
+      setDiagnosticAttr('dm-bili-main-danmaku-done', data.id)
+      setDiagnosticAttr(
         'dm-bili-main-danmaku-count',
         String(danmakus.length),
       )
@@ -203,19 +216,11 @@ function main() {
         danmakus,
       })
     } catch (error) {
-      document.documentElement.setAttribute(
-        'dm-bili-main-danmaku-error',
-        ((error as any)?.toString && (error as any).toString()) ||
-          (error as Error)?.message ||
-          String(error),
-      )
+      setDiagnosticAttr('dm-bili-main-danmaku-error', formatDiagnosticError(error))
       postMessageToTop(PostMessageEvent.bilibiliDanmaku_resp, {
         id: data.id,
         isOk: false,
-        errMsg:
-          ((error as any)?.toString && (error as any).toString()) ||
-          (error as Error)?.message ||
-          String(error),
+        errMsg: formatDiagnosticError(error),
       })
     }
   })

@@ -1,6 +1,7 @@
 import API_bilibili from '@root/api/bilibili'
 import { PlayerEvent } from '@root/core/event'
 import { WebProvider } from '@root/core/WebProvider'
+import { setDiagnosticAttr } from '@root/shared/diagnostics'
 import isDev from '@root/shared/isDev'
 import isTop from '@root/shared/isTop'
 import PostMessageEvent, {
@@ -41,8 +42,7 @@ const FRAME_INIT_KEY = '__DM_MINI_PLAYER_FRAME_INIT__'
 if (isTop) {
   if (!(window as any)[MAIN_INIT_KEY]) {
     ;(window as any)[MAIN_INIT_KEY] = true
-    document.documentElement.setAttribute('dm-main-loaded', 'true')
-    console.log('run content')
+    setDiagnosticAttr('dm-main-loaded', 'true')
     main()
   }
 } else {
@@ -189,18 +189,18 @@ function main() {
     if (!message || message.kind !== POPUP_MESSAGE_KIND) return
     switch (message.event) {
       case WebextEvent.hello:
-        document.documentElement.setAttribute('dm-popup-hello', 'true')
+        setDiagnosticAttr('dm-popup-hello', 'true')
         return Promise.resolve('hi')
       case WebextEvent.requestVideoPIP:
-        document.documentElement.setAttribute('dm-popup-request-pip', 'true')
+        setDiagnosticAttr('dm-popup-request-pip', 'true')
         return Promise.resolve(requestVideoPIP())
       case WebextEvent.openSetting:
-        document.documentElement.setAttribute('dm-popup-open-setting', 'true')
+        setDiagnosticAttr('dm-popup-open-setting', 'true')
         window.openSettingPanel()
         return Promise.resolve('ok')
     }
   })
-  document.documentElement.setAttribute('dm-popup-listener', 'true')
+  setDiagnosticAttr('dm-popup-listener', 'true')
   // 从popup点击的弹出设置
   onBgMessage(WebextEvent.openSetting, () => {
     window.openSettingPanel()

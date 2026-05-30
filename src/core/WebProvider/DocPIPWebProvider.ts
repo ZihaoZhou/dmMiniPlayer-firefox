@@ -1,6 +1,8 @@
 import { PIP_WINDOW_CONFIG } from '@root/shared/storeKey'
 import WebextEvent from '@root/shared/webextEvent'
 import PostMessageEvent from '@root/shared/postMessageEvent'
+import { setDiagnosticAttr } from '@root/shared/diagnostics'
+import { isFirefoxTarget } from '@root/shared/extensionTarget'
 import configStore, { videoBorderType } from '@root/store/config'
 import { calculateNewDimensions, createElement } from '@root/utils'
 import { getDocPIPBorderSize } from '@root/utils/docPIP'
@@ -15,8 +17,6 @@ import { autorun } from 'mobx'
 import { HtmlVideoPlayer } from '../VideoPlayer/HtmlVideoPlayer'
 import { PlayerEvent } from '../event'
 import { WebProvider } from '.'
-
-const isFirefoxTarget = process.env.EXTENSION_TARGET === 'firefox'
 
 function getFirefoxWrappedObject<T>(value: T): T {
   if (!isFirefoxTarget) return value
@@ -86,49 +86,66 @@ async function appendPlayerElToPIPWindow(
   }
 
   const id = playerEl.id || createDocPIPRootId()
+  const originalParent = playerEl.parentNode
+  const originalNextSibling = playerEl.nextSibling
   const styleText = playerEl.getAttribute('style') ?? ''
-  playerEl.id = id
-  playerEl.setAttribute(
-    'style',
-    `${styleText};position:fixed!important;left:-100000px!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;`,
-  )
-  document.body.appendChild(playerEl)
 
-  const response = await new Promise<{
-    isOk: boolean
-    errMsg?: string
-    bodyChildren?: number
-  } | null>((resolve) => {
-    const timer = window.setTimeout(() => {
-      unListen()
-      resolve(null)
-    }, 500)
-    const unListen = onPostMessage(
-      PostMessageEvent.appendDocPIPRoot_resp,
-      (data) => {
-        if (data.id !== id) return
-        window.clearTimeout(timer)
-        unListen()
-        resolve(data)
-      },
-    )
+  const restorePlayerEl = () => {
+    if (styleText) {
+      playerEl.setAttribute('style', styleText)
+    } else {
+      playerEl.removeAttribute('style')
+    }
 
-    postMessageToTop(PostMessageEvent.appendDocPIPRoot, {
-      id,
-      styleText,
-    })
-  })
-
-  if (!response) return
-
-  if (!response.isOk) {
-    throw new Error(response.errMsg || 'Failed to move DocPiP root')
+    if (originalParent) {
+      originalParent.insertBefore(playerEl, originalNextSibling)
+    } else {
+      playerEl.remove()
+    }
   }
 
-  document.documentElement.setAttribute(
-    'dm-docpip-body-children',
-    String(response.bodyChildren ?? ''),
-  )
+  try {
+    playerEl.id = id
+    playerEl.setAttribute(
+      'style',
+      `${styleText};position:fixed!important;left:-100000px!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;`,
+    )
+    document.body.appendChild(playerEl)
+
+    const response = await new Promise<{
+      isOk: boolean
+      errMsg?: string
+      bodyChildren?: number
+    }>((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        unListen()
+        reject(new Error('Timed out moving DocPiP root in page world'))
+      }, 3000)
+      const unListen = onPostMessage(
+        PostMessageEvent.appendDocPIPRoot_resp,
+        (data) => {
+          if (data.id !== id) return
+          window.clearTimeout(timer)
+          unListen()
+          resolve(data)
+        },
+      )
+
+      postMessageToTop(PostMessageEvent.appendDocPIPRoot, {
+        id,
+        styleText,
+      })
+    })
+
+    if (!response.isOk) {
+      throw new Error(response.errMsg || 'Failed to move DocPiP root')
+    }
+
+    setDiagnosticAttr('dm-docpip-body-children', response.bodyChildren ?? '')
+  } catch (error) {
+    restorePlayerEl()
+    throw error
+  }
 }
 
 export default class DocPIPWebProvider extends WebProvider {
@@ -172,15 +189,15 @@ export default class DocPIPWebProvider extends WebProvider {
     let playerEl: HTMLElement | undefined
 
     if (isFirefoxTarget) {
-      document.documentElement.setAttribute('dm-docpip-stage', 'request-window')
+      setDiagnosticAttr('dm-docpip-stage', 'request-window')
       pipWindow = await requestDocPIPWindow({
         width,
         height,
       })
-      document.documentElement.setAttribute('dm-docpip-stage', 'init-player')
+      setDiagnosticAttr('dm-docpip-stage', 'init-player')
       this.pipWindow = pipWindow
       await this.miniPlayer.init()
-      document.documentElement.setAttribute('dm-docpip-stage', 'player-inited')
+      setDiagnosticAttr('dm-docpip-stage', 'player-inited')
       playerEl = this.miniPlayer.playerRootEl
     } else {
       await sendMessage(WebextEvent.beforeStartPIP, null)
@@ -220,9 +237,9 @@ canvas{
     })
     playerEl.appendChild(docPIPRootStyle)
 
-    document.documentElement.setAttribute('dm-docpip-stage', 'append-player')
+    setDiagnosticAttr('dm-docpip-stage', 'append-player')
     await appendPlayerElToPIPWindow(pipWindow, playerEl)
-    document.documentElement.setAttribute('dm-docpip-stage', 'player-appended')
+    setDiagnosticAttr('dm-docpip-stage', 'player-appended')
 
     const resizePIP = (size: { width: number; height: number }) => {
       if (isFirefoxTarget) {

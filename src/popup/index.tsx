@@ -3,20 +3,19 @@ import Browser from 'webextension-polyfill'
 import { createRoot } from 'react-dom/client'
 import WebextEvent from '@root/shared/webextEvent'
 import { FLOAT_BTN_HIDDEN } from '@root/shared/storeKey'
+import {
+  removeDiagnosticAttr,
+  setDiagnosticAttr,
+} from '@root/shared/diagnostics'
 import { POPUP_MESSAGE_KIND } from '@root/shared/popupMessage'
+import { isFirefoxTarget } from '@root/shared/extensionTarget'
+import { FIREFOX_CONTENT_SCRIPT_PLAN } from '@root/shared/firefox'
 import {
   getBrowserSyncStorage,
   setBrowserSyncStorage,
   useBrowserSyncStorage,
 } from '@root/utils/storage'
 import { t } from '../utils/i18n'
-
-const isFirefoxTarget = process.env.EXTENSION_TARGET === 'firefox'
-const FIREFOX_CONTENT_SCRIPT_FILES = [
-  'entry-all-frames.js',
-  'clogInject.js',
-  'main.js',
-]
 
 const params = new URLSearchParams(location.search)
 const isAutostart = params.get('autostart') === '1'
@@ -46,7 +45,7 @@ const canTalkToContentScript = async (tabId: number, timeoutMs = 800) => {
 }
 
 const setDiagnostic = (key: string, value: unknown) => {
-  document.documentElement.setAttribute(`data-dm-popup-${key}`, String(value))
+  setDiagnosticAttr(`data-dm-popup-${key}`, value)
 }
 
 const getTargetTab = async () => {
@@ -83,6 +82,7 @@ const isUnsupportedUrl = (url?: string) =>
 const executeScript = (details: {
   target: { tabId: number; allFrames?: boolean }
   files: string[]
+  world?: 'MAIN'
 }) => {
   const scripting =
     (Browser as any).scripting ??
@@ -100,11 +100,15 @@ const ensureContentScripts = async (tabId: number) => {
   if (!isFirefoxTarget) return
 
   let resultCount = 0
-  for (const file of FIREFOX_CONTENT_SCRIPT_FILES) {
+  for (const script of FIREFOX_CONTENT_SCRIPT_PLAN) {
+    const file = script.js[0]
+    const allFrames = 'all_frames' in script ? script.all_frames : undefined
+    const world = 'world' in script ? script.world : undefined
     try {
       const results = await executeScript({
-        target: { tabId, allFrames: true },
+        target: { tabId, allFrames },
         files: [file],
+        world,
       })
       resultCount += (results as any[])?.length ?? 0
     } catch (allFramesError) {
@@ -116,6 +120,7 @@ const ensureContentScripts = async (tabId: number) => {
       const results = await executeScript({
         target: { tabId },
         files: [file],
+        world,
       })
       resultCount += (results as any[])?.length ?? 0
     }
@@ -247,15 +252,12 @@ const Page_popup: FC = () => {
   }, [])
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-dm-popup-status', status)
-    document.documentElement.setAttribute(
-      'data-dm-popup-loading',
-      String(isLoading),
-    )
+    setDiagnosticAttr('data-dm-popup-status', status)
+    setDiagnosticAttr('data-dm-popup-loading', String(isLoading))
     if (errorType) {
-      document.documentElement.setAttribute('data-dm-popup-error', errorType)
+      setDiagnosticAttr('data-dm-popup-error', errorType)
     } else {
-      document.documentElement.removeAttribute('data-dm-popup-error')
+      removeDiagnosticAttr('data-dm-popup-error')
     }
   }, [errorType, isLoading, status])
 
@@ -318,6 +320,9 @@ const Page_popup: FC = () => {
         }
       `}</style>
       <div className="popup-menu">
+        <button className="menu-item" disabled={isLoading} onClick={startPIP}>
+          <span>{t('floatButton.startDanmakuPIP')}</span>
+        </button>
         <button
           className="menu-item"
           disabled={isLoading}

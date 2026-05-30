@@ -4,6 +4,7 @@ import type { SubtitleItem } from '@root/core/SubtitleManager/types'
 import { getBiliBiliVideoDanmu } from '@root/danmaku/bilibili/videoBarrageClient/bilibili-api'
 import { DanmakuStack } from '@root/danmaku/bilibili/videoBarrageClient/bilibili-evaolved/converter/danmaku-stack'
 import { DanmakuType } from '@root/danmaku/bilibili/videoBarrageClient/bilibili-evaolved/converter/danmaku-type'
+import { setDiagnosticAttr } from '@root/shared/diagnostics'
 import {
   JsonDanmaku,
   getTextByType,
@@ -71,22 +72,16 @@ export function getSubtitle(url: string): Promise<BiliBiliSubtitleRes> {
 }
 
 export const getDanmakus = onceCall(async (aid: string, cid: string) => {
-  document.documentElement.setAttribute('dm-bili-danmaku-fetch-stage', 'start')
-  document.documentElement.setAttribute('dm-bili-danmaku-aid', aid)
-  document.documentElement.setAttribute('dm-bili-danmaku-cid', cid)
+  setDiagnosticAttr('dm-bili-danmaku-fetch-stage', 'start')
+  setDiagnosticAttr('dm-bili-danmaku-aid', aid)
+  setDiagnosticAttr('dm-bili-danmaku-cid', cid)
   if (!configStore.biliVideoDansFromBiliEvaolved) {
-    document.documentElement.setAttribute(
-      'dm-bili-danmaku-fetch-stage',
-      'list-so',
-    )
+    setDiagnosticAttr('dm-bili-danmaku-fetch-stage', 'list-so')
     const danmakus = isFirefoxTarget
       ? await getBiliBiliVideoDanmuInPageWorld(cid)
       : await getBiliBiliVideoDanmu(cid)
-    document.documentElement.setAttribute(
-      'dm-bili-danmaku-fetch-stage',
-      'done',
-    )
-    document.documentElement.setAttribute(
+    setDiagnosticAttr('dm-bili-danmaku-fetch-stage', 'done')
+    setDiagnosticAttr(
       'dm-bili-danmaku-fetch-count',
       String(danmakus.length),
     )
@@ -118,7 +113,7 @@ export const getDanmakus = onceCall(async (aid: string, cid: string) => {
 
 export async function getVideoInfoFromUrlInPageWorld(_url: string) {
   const id = createRequestId()
-  document.documentElement.setAttribute('dm-bili-content-info-send', id)
+  setDiagnosticAttr('dm-bili-content-info-send', id)
   const response = await waitForPostMessage(
     PostMessageEvent.bilibiliVideoInfo_resp,
     id,
@@ -129,7 +124,7 @@ export async function getVideoInfoFromUrlInPageWorld(_url: string) {
       })
     },
   )
-  document.documentElement.setAttribute('dm-bili-content-info-recv', id)
+  setDiagnosticAttr('dm-bili-content-info-recv', id)
   if (!response.isOk || !response.aid || !response.cid) {
     throw new Error(response.errMsg || 'Failed to get Bilibili video info')
   }
@@ -144,7 +139,7 @@ async function getBiliBiliVideoDanmuInPageWorld(
   cid: string,
 ): Promise<DanmakuInitData[]> {
   const id = createRequestId()
-  document.documentElement.setAttribute('dm-bili-content-danmaku-send', id)
+  setDiagnosticAttr('dm-bili-content-danmaku-send', id)
   const response = await waitForPostMessage(
     PostMessageEvent.bilibiliDanmaku_resp,
     id,
@@ -155,7 +150,7 @@ async function getBiliBiliVideoDanmuInPageWorld(
       })
     },
   )
-  document.documentElement.setAttribute('dm-bili-content-danmaku-recv', id)
+  setDiagnosticAttr('dm-bili-content-danmaku-recv', id)
   if (!response.isOk || !response.danmakus) {
     throw new Error(response.errMsg || 'Failed to get Bilibili danmaku')
   }
