@@ -1,11 +1,7 @@
 import cookie from '@pkgs/js-cookie'
 import API_bilibili from '@root/api/bilibili'
 import BarrageClient from '@root/core/danmaku/BarrageClient'
-import {
-  sendMessage,
-  onMessage,
-  runCodeInTopWindow,
-} from '@root/inject/contentSender'
+import { sendMessage } from '@root/inject/contentSender'
 import { tryCatch } from '@root/utils'
 import AsyncLock from '@root/utils/AsyncLock'
 import { t } from '@root/utils/i18n'
@@ -28,7 +24,7 @@ const getRoomid = async (short: number) => {
 }
 
 export const getConf = async (roomid: number) => {
-  const raw = await runCodeInTopWindow(() => window.__danmuInfo)
+  const raw = await sendMessage('get-data', { keys: ['__danmuInfo'] })
   const {
     data: {
       token: key,

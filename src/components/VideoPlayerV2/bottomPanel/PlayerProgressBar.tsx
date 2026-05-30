@@ -7,6 +7,7 @@ import { FC, useContext, useEffect, useRef, useState } from 'react'
 import { observer } from 'mobx-react'
 import configStore from '@root/store/config'
 import { VideoPreviewData } from '@root/core/VideoPreviewManager'
+import SafeStyle from '@root/components/SafeStyle'
 import ProgressBar from '../../ProgressBar'
 import vpContext from '../context'
 import { useTogglePlayState } from '../hooks'
@@ -81,7 +82,7 @@ const PlayerProgressBar: FC<Props> = (props) => {
           '--bottom-progress-height': configStore.videoProgress_height + 'px',
         }}
       >
-        <style dangerouslySetInnerHTML={{ __html: style }}></style>
+        <SafeStyle cssText={style} />
         <ProgressBar
           percent={playedPercent}
           onClick={handleOnclick}

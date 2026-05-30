@@ -4,6 +4,7 @@ import { type FC, useContext, useEffect, useState } from 'react'
 import useTargetEventListener from '@root/hook/useTargetEventListener'
 import { useOnce } from '@root/hook'
 import { PlayerEvent } from '@root/core/event'
+import SafeStyle from '@root/components/SafeStyle'
 import Iconfont from '../../Iconfont'
 import ProgressBar from '../../ProgressBar'
 import vpContext from '../context'
@@ -57,7 +58,7 @@ const VolumeBar: FC<Props> = (props) => {
 
   return (
     <div className={className}>
-      <style dangerouslySetInnerHTML={{ __html: style }}></style>
+      <SafeStyle cssText={style} />
       <div className="volume-progress">
         <ProgressBar
           percent={volume}

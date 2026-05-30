@@ -69,14 +69,16 @@ UI code, and third-party npm dependencies into WebExtension files. The source
 package contains the original source and `pnpm-lock.yaml` for dependency
 resolution.
 
-## Validator Warnings
+## Validator
 
-`web-ext lint --source-dir dist` reports warnings, but no errors.
+Current production Firefox builds pass AMO static lint with no errors, notices,
+or warnings:
 
-- `DANGEROUS_EVAL`: inherited from the upstream page-world helper and from the
-  bundled `protobuf.js` runtime used to parse Bilibili protobuf danmaku data.
-  The extension does not fetch or execute remote JavaScript controlled by the
-  extension developer.
-- `UNSAFE_VAR_ASSIGNMENT` / `innerHTML`: used by extension-owned UI/CSS render
-  helpers and danmaku rendering code. The Firefox manifest limits execution to
-  the Bilibili-related match patterns listed above.
+```bash
+web-ext lint --source-dir dist
+```
+
+The Firefox build excludes the unused upstream protobuf runtime asset, avoids
+the upstream page-world arbitrary code runner, uses a Bilibili-only provider
+bundle, and rewrites renderer/style helper `innerHTML` writes in the generated
+Firefox bundle to `textContent` writes during `scripts/afterClean.ts`.

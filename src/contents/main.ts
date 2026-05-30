@@ -32,7 +32,7 @@ import {
 import { autorun } from 'mobx'
 import { onMessage as onBgMessage } from 'webext-bridge/content-script'
 import Browser from 'webextension-polyfill'
-import _getWebProvider from '../web-provider/getWebProvider'
+import _getWebProvider from '@root/web-provider/getWebProvider'
 import './floatButton'
 
 const MAIN_INIT_KEY = '__DM_MINI_PLAYER_MAIN_INIT__'

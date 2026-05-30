@@ -32,6 +32,9 @@ export type TProtocolMap = {
 
   'run-code': ProtocolWithReturn<{ function: string; args?: any[] }, any>
   'get-data': ProtocolWithReturn<{ keys: string[] }, any>
+  'document-visibility:force-visible': ProtocolWithReturn<void, void>
+  'document-visibility:restore': ProtocolWithReturn<void, void>
+  'document-visibility:dispatch-change': ProtocolWithReturn<void, void>
   'inject-api:run': ProtocolWithReturn<
     { origin: string; keys: string[]; onTriggerEvent: string },
     any

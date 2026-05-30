@@ -6,12 +6,57 @@ import './createElementHacker'
 import './netflix'
 // import './fetchHacker'
 
-onMessage_inject('run-code', async (data) => {
-  // console.log('runFn', data)
-  let fn = new Function(`return (${data.function})(...arguments)`)
+if (process.env.EXTENSION_TARGET !== 'firefox') {
+  onMessage_inject('run-code', async (data) => {
+    // console.log('runFn', data)
+    let fn = new Function(`return (${data.function})(...arguments)`)
 
-  let rs = await fn(...(data.args ?? []))
-  return rs
+    let rs = await fn(...(data.args ?? []))
+    return rs
+  })
+}
+
+function getDeeperGetter(obj: any, key: string) {
+  if (!obj) return undefined
+  const val = Object.getOwnPropertyDescriptor(obj, key)
+  if (val && val.get) return val.get
+  return getDeeperGetter(Object.getPrototypeOf(obj), key)
+}
+
+onMessage_inject('document-visibility:force-visible', () => {
+  try {
+    const originGetter = getDeeperGetter(document, 'visibilityState')
+    window.__restoreDocumentVisibilityStateGetter = () => {
+      Object.defineProperty(document, 'visibilityState', {
+        get: originGetter,
+      })
+    }
+  } catch (error) {
+    console.error('没法设置还原document.visibilityState的getter', error)
+  }
+
+  try {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get() {
+        return 'visible'
+      },
+    })
+  } catch (error) {
+    console.error('没法注入document.visibilityState的getter', error)
+  }
+})
+
+onMessage_inject('document-visibility:restore', () => {
+  if (window.__restoreDocumentVisibilityStateGetter) {
+    window.__restoreDocumentVisibilityStateGetter()
+  } else {
+    console.error('没有找到window.__restoreDocumentVisibilityStateGetter')
+  }
+})
+
+onMessage_inject('document-visibility:dispatch-change', () => {
+  document.dispatchEvent(new Event('visibilitychange'))
 })
 
 onMessage_inject('get-data', (data) => {

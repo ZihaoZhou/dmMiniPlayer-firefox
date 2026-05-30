@@ -16,6 +16,8 @@ Bilibili 视频在 Firefox / macOS 上也能用带弹幕的 Document Picture-in-
 - 页面悬浮按钮已做 Firefox 区分，避免和 Firefox 原生 PiP 按钮混淆。
 - 已有 Firefox smoke/regression 测试覆盖 popup、设置面板、悬浮按钮、DocPiP
   打开、控制栏和关闭路径。
+- 当前 production Firefox build 通过 `web-ext lint --source-dir dist`，无
+  errors、notices、warnings。
 
 ## 已知限制
 

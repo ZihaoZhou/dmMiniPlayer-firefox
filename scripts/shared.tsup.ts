@@ -31,6 +31,18 @@ export const shareConfig = {
       // 'react-dom': 'preact/compat', // 必须放在 test-utils 下面
       // 'react/jsx-runtime': 'preact/jsx-runtime',
     })
+    if (extensionTarget === 'firefox') {
+      Object.assign(options.alias, {
+        '@root/web-provider/getWebProvider': pr(
+          '../src/web-provider/getWebProviderFirefox.ts',
+        ),
+        react: 'preact/compat',
+        'react-dom/client': 'preact/compat/client',
+        'react-dom/test-utils': 'preact/test-utils',
+        'react-dom': 'preact/compat',
+        'react/jsx-runtime': 'preact/jsx-runtime',
+      })
+    }
     options.charset = 'utf8'
   },
   outExtension({ format }) {
@@ -75,7 +87,11 @@ export const shareConfig = {
         pr(outDir, `./_locales/${locale.replace('.json', '')}/messages.json`),
       )
     })
-    fs.copySync(pr('../assets'), pr(outDir, './assets'))
+    fs.copySync(pr('../assets'), pr(outDir, './assets'), {
+      filter: (src) =>
+        extensionTarget !== 'firefox' ||
+        !src.endsWith('assets/lib/protobuf.js'),
+    })
 
     const manifest = createBuildManifest(fs.readdirSync(pr(outDir)), {
       includeScripting: isDev,
