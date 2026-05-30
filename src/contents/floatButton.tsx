@@ -36,11 +36,9 @@ async function initVideoFloatBtn(
       )
     })
 
-    console.log('hasSpcStyle', hasSpcStyle)
     if (hasSpcStyle) fixedPos = false
   }
 
-  console.log('create floatButton', container, vel, fixedPos)
   const initPos = await getBrowserSyncStorage(DRAG_POS)
   const reactRoot = createElement('div')
   createRoot(reactRoot).render(

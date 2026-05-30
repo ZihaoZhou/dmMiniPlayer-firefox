@@ -160,7 +160,7 @@ export function createManifest(
         id: 'dmminiplayer-firefox@local',
         strict_min_version: '151.0',
         data_collection_permissions: {
-          required: ['websiteActivity'],
+          required: ['none'],
         },
       },
     },

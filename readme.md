@@ -64,6 +64,61 @@ pnpm run dev
 ```
 Drag `dist` folder and drop to `chrome://extensions/` page in Chrome (Open development mode before)
 
+### Firefox build
+```bash
+pnpm i
+pnpm build:firefox
+```
+
+Open `about:debugging#/runtime/this-firefox`, click `Load Temporary Add-on...`,
+and select `dist/manifest.json`.
+
+Run the Firefox smoke regression:
+
+```bash
+pnpm test:firefox-regression
+```
+
+### Firefox Document PiP window chrome
+
+Firefox's Document Picture-in-Picture implementation currently opens a small
+browser window instead of a fully borderless native PiP surface. The extension
+can render the video and danmaku inside that window, but it cannot hide Firefox's
+own URL/title chrome.
+
+Advanced users can hide most of the Firefox toolbar with `userChrome.css`:
+
+```css
+/* dmMiniPlayer Firefox Document PiP chrome cleanup - begin */
+@media (display-mode: picture-in-picture) {
+  #navigator-toolbox,
+  #TabsToolbar,
+  #nav-bar,
+  #PersonalToolbar,
+  #toolbar-menubar {
+    min-height: 0 !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    visibility: collapse !important;
+  }
+
+  #document-pip-return-to-opener-button,
+  #urlbar-container,
+  #identity-box,
+  #tracking-protection-icon-container {
+    display: none !important;
+  }
+}
+/* dmMiniPlayer Firefox Document PiP chrome cleanup - end */
+```
+
+On macOS this does not remove the native window title bar or traffic-light
+buttons. Removing that part would require a browser-side change.
+
 ## 📚 主要实现方法
 ### 旧版本PIP
 用一个单独canvas画video + 弹幕，再把canvas的stream附加到一个单独的video上，最后开启画中画功能

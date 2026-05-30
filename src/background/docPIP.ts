@@ -52,7 +52,6 @@ onMessage(WebextEvent.beforeStartPIP, async () => {
 
 onMessage(WebextEvent.moveDocPIPPos, async ({ data }) => {
   const docPIPTab = await mv3GetDocPIPTab(data.docPIPWidth)
-  console.log('docPIPTab', docPIPTab)
   if (!docPIPTab) throw Error('Not find docPIP tab')
   await mv3MoveTabsToPosition(docPIPTab, [data.x, data.y])
 })
@@ -76,6 +75,4 @@ onMessage(WebextEvent.closePIP, () => {
   setDocPIPTabId(null)
 })
 
-onMessage(WebextEvent.keepAlive, () => {
-  console.log('keepAlive')
-})
+onMessage(WebextEvent.keepAlive, () => {})

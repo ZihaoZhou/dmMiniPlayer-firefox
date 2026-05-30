@@ -151,7 +151,6 @@ export default class DocPIPWebProvider extends WebProvider {
     let width = pipWindowConfig?.width ?? this.webVideo.clientWidth,
       height = pipWindowConfig?.height ?? this.webVideo.clientHeight
 
-    console.log('[docPIP_WH] pipWindowConfig', pipWindowConfig)
     // cw / ch = vw / vh
     const vw = this.webVideo.videoWidth,
       vh = this.webVideo.videoHeight
@@ -174,7 +173,6 @@ export default class DocPIPWebProvider extends WebProvider {
 
     if (isFirefoxTarget) {
       document.documentElement.setAttribute('dm-docpip-stage', 'request-window')
-      console.log('[docPIP_WH] real width height', { width, height })
       pipWindow = await requestDocPIPWindow({
         width,
         height,
@@ -188,7 +186,6 @@ export default class DocPIPWebProvider extends WebProvider {
       await sendMessage(WebextEvent.beforeStartPIP, null)
       await this.miniPlayer.init()
       playerEl = this.miniPlayer.playerRootEl
-      console.log('[docPIP_WH] real width height', { width, height })
       pipWindow = await requestDocPIPWindow({
         width,
         height,
@@ -291,7 +288,6 @@ canvas{
         switch (configStore.movePIPInOpen) {
           case MovePIPAfterOpenType.lastPos: {
             const [borX, borY] = getDocPIPBorderSize(pipWindow)
-            console.log('borX, borY', borX, borY)
 
             let [realWidth, realHeight] = [width + borX, height + borY]
 
@@ -419,7 +415,6 @@ canvas{
           pipWindow.innerWidth + configStore.saveWidthOnDocPIPCloseOffset,
           pipWindow.innerHeight + configStore.saveHeightOnDocPIPCloseOffset,
         ]
-        console.log('[docPIP_WH] save width and height', { width, height })
         setBrowserSyncStorage(PIP_WINDOW_CONFIG, {
           height,
           width,
