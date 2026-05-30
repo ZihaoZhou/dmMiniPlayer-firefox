@@ -68,3 +68,15 @@ The submitted extension uses `tsup`/esbuild to bundle TypeScript, React/Preact
 UI code, and third-party npm dependencies into WebExtension files. The source
 package contains the original source and `pnpm-lock.yaml` for dependency
 resolution.
+
+## Validator Warnings
+
+`web-ext lint --source-dir dist` reports warnings, but no errors.
+
+- `DANGEROUS_EVAL`: inherited from the upstream page-world helper and from the
+  bundled `protobuf.js` runtime used to parse Bilibili protobuf danmaku data.
+  The extension does not fetch or execute remote JavaScript controlled by the
+  extension developer.
+- `UNSAFE_VAR_ASSIGNMENT` / `innerHTML`: used by extension-owned UI/CSS render
+  helpers and danmaku rendering code. The Firefox manifest limits execution to
+  the Bilibili-related match patterns listed above.
