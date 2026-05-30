@@ -4,7 +4,7 @@ import configStore from '@root/store/config'
 import { PlayerEvent } from '@root/core/event'
 import useTargetEventListener from '@root/hook/useTargetEventListener'
 import { Key, keyCodeToCode, keyToKeyCodeMap } from '@root/types/key'
-import { isFunction, isString } from 'lodash-es'
+import { isFunction, isString } from '@root/utils/lodash'
 import { useMemoizedFn } from 'ahooks'
 import vpContext from './context'
 

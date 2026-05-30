@@ -1,16 +1,10 @@
 import fs from 'fs-extra'
-import { manifest } from '../src/manifest'
 import { outDir } from './shared.tsup'
+import { createBuildManifest } from './manifestUtils'
 import { pr } from './utils.mjs'
+import { writeSettingPanelCss } from './settingPanelCss'
 
-manifest.web_accessible_resources = [
-  {
-    resources: fs.readdirSync(pr(outDir)),
-    matches: ['<all_urls>'],
-  },
-  {
-    resources: ['assets/icon.png'],
-    matches: ['<all_urls>'],
-  },
-]
+writeSettingPanelCss(pr(outDir, './setting-panel.css'))
+
+const manifest = createBuildManifest(fs.readdirSync(pr(outDir)))
 fs.writeJSONSync(pr(outDir, './manifest.json'), manifest, { spaces: 2 })

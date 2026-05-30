@@ -16,8 +16,7 @@ const freeGlobalThis =
 /** Detect free variable `self`. */
 const freeSelf =
   typeof self === 'object' && self !== null && self.Object === Object && self
-const root =
-  freeGlobalThis || freeGlobal || freeSelf || Function('return this')()
+const root = freeGlobalThis || freeGlobal || freeSelf
 
 /**
  * Creates a debounced function that delays invoking `func` until after `wait`

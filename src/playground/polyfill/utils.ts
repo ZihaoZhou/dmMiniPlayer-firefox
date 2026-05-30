@@ -1,4 +1,4 @@
-import { isFunction, isObject, isUndefined } from 'lodash-es'
+import { isFunction, isObject, isUndefined } from '@root/utils/lodash'
 
 export function sendEventToMac(name: string, content?: any) {
   try {

@@ -1,23 +1,31 @@
 import Browser from 'webextension-polyfill'
 
-const extStorage = Browser.storage.local
+const CLOG_INJECT_KEY = '__DM_MINI_PLAYER_CLOG_INJECT__'
 
-const oClog = console.log
+if ((window as any)[CLOG_INJECT_KEY]) {
+  document.documentElement.setAttribute('dm-clog-inject-duplicate', 'true')
+} else {
+  ;(window as any)[CLOG_INJECT_KEY] = true
 
-window.showLog = process.env.NODE_ENV === 'development'
+  const extStorage = Browser.storage.local
 
-extStorage.get('showLog').then((res) => {
-  if (typeof res?.['showLog'] == 'undefined') return
+  const oClog = console.log
 
-  window.showLog = res['showLog']
-})
+  window.showLog = process.env.NODE_ENV === 'development'
 
-window.console.log = (...args: any[]) => {
-  if (!window.showLog) return
-  oClog(...args)
-}
+  extStorage.get('showLog').then((res) => {
+    if (typeof res?.['showLog'] == 'undefined') return
 
-window.setShowLog = (show: boolean) => {
-  window.showLog = show
-  extStorage.set({ showLog: show })
+    window.showLog = res['showLog']
+  })
+
+  window.console.log = (...args: any[]) => {
+    if (!window.showLog) return
+    oClog(...args)
+  }
+
+  window.setShowLog = (show: boolean) => {
+    window.showLog = show
+    extStorage.set({ showLog: show })
+  }
 }

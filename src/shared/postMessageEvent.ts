@@ -17,6 +17,14 @@ enum PostMessageEvent {
   fullInWeb_close = 'fullInWeb_close',
   fullInWeb_eventProxy = 'fullInWeb_eventProxy',
   closeDocPIP = 'closeDocPIP',
+  openDocPIPWindow = 'openDocPIPWindow',
+  openDocPIPWindow_resp = 'openDocPIPWindow_resp',
+  appendDocPIPRoot = 'appendDocPIPRoot',
+  appendDocPIPRoot_resp = 'appendDocPIPRoot_resp',
+  bilibiliVideoInfo = 'bilibiliVideoInfo',
+  bilibiliVideoInfo_resp = 'bilibiliVideoInfo_resp',
+  bilibiliDanmaku = 'bilibiliDanmaku',
+  bilibiliDanmaku_resp = 'bilibiliDanmaku_resp',
   asyncData = 'asyncData',
 }
 
@@ -82,6 +90,50 @@ export interface PostMessageProtocolMap {
   [PostMessageEvent.closeDocPIP]: {
     type?: 'autoPIP_closeInReturnToOriginPos'
   } | void
+  [PostMessageEvent.openDocPIPWindow]: {
+    id: string
+    width?: number
+    height?: number
+  }
+  [PostMessageEvent.openDocPIPWindow_resp]: {
+    id: string
+    isOk: boolean
+    errMsg?: string
+    innerWidth?: number
+    innerHeight?: number
+  }
+  [PostMessageEvent.appendDocPIPRoot]: {
+    id: string
+    styleText: string
+  }
+  [PostMessageEvent.appendDocPIPRoot_resp]: {
+    id: string
+    isOk: boolean
+    errMsg?: string
+    bodyChildren?: number
+  }
+  [PostMessageEvent.bilibiliVideoInfo]: {
+    id: string
+    url: string
+  }
+  [PostMessageEvent.bilibiliVideoInfo_resp]: {
+    id: string
+    isOk: boolean
+    errMsg?: string
+    aid?: string | number
+    bid?: string
+    cid?: string | number
+  }
+  [PostMessageEvent.bilibiliDanmaku]: {
+    id: string
+    cid: string
+  }
+  [PostMessageEvent.bilibiliDanmaku_resp]: {
+    id: string
+    isOk: boolean
+    errMsg?: string
+    danmakus?: any[]
+  }
 
   [PostMessageEvent.asyncData]: {
     data: any

@@ -1,5 +1,5 @@
 import { addEventListener, wait } from '@root/utils'
-import { isUndefined } from 'lodash-es'
+import { isUndefined } from '@root/utils/lodash'
 
 function getDom<T extends HTMLElement>(el: T | string) {
   return typeof el == 'string' ? (document.querySelector(el) as T) : el

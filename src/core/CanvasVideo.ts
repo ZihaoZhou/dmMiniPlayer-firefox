@@ -1,6 +1,6 @@
 import { addEventListener } from '@root/utils'
 import { onceCallGet } from '@root/utils/decorator'
-import { isUndefined } from 'lodash-es'
+import { isUndefined } from '@root/utils/lodash'
 import { EventBus, PlayerEvent } from './event'
 
 type Props = {

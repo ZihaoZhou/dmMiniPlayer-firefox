@@ -7,15 +7,16 @@ import {
   setDocPIPTabId,
 } from '@root/utils/mv3'
 import { onMessage } from 'webext-bridge/background'
+import Browser from 'webextension-polyfill'
 
 onMessage(WebextEvent.beforeStartPIP, async () => {
   // 通过将比较新旧的tab，找到docPIPTabId
-  const tabs = (await chrome.tabs.query({ active: true })).filter(
+  const tabs = (await Browser.tabs.query({ active: true })).filter(
     (v) => !v.favIconUrl,
   )
   let unListen = onMessage(WebextEvent.afterStartPIP, async ({ data }) => {
     const width = data.width
-    const newTabs = (await chrome.tabs.query({ active: true })).filter(
+    const newTabs = (await Browser.tabs.query({ active: true })).filter(
       (v) => !v.favIconUrl,
     )
 

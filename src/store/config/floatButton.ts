@@ -7,6 +7,7 @@ const config: typeof _config = (props) => ({ ...props, category })
 export enum FloatButtonPos {
   leftTop = 'leftTop',
   rightTop = 'rightTop',
+  rightMiddle = 'rightMiddle',
   leftBottom = 'leftBottom',
   rightBottom = 'rightBottom',
 }
@@ -22,15 +23,19 @@ const config_floatButton = {
     group: [
       { label: t('settingPanel.leftTop'), value: FloatButtonPos.leftTop },
       { label: t('settingPanel.rightTop'), value: FloatButtonPos.rightTop },
+      {
+        label: t('settingPanel.rightMiddle'),
+        value: FloatButtonPos.rightMiddle,
+      },
       { label: t('settingPanel.leftBottom'), value: FloatButtonPos.leftBottom },
       {
         label: t('settingPanel.rightBottom'),
         value: FloatButtonPos.rightBottom,
       },
     ],
-    defaultValue: FloatButtonPos.leftTop,
+    defaultValue: FloatButtonPos.rightMiddle,
   }),
-  floatButtonX: config({ label: 'X', defaultValue: 5 }),
+  floatButtonX: config({ label: 'X', defaultValue: 24 }),
   floatButtonY: config({ label: 'Y', defaultValue: 5 }),
 }
 

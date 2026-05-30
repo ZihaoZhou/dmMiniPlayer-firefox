@@ -347,9 +347,24 @@ const VideoPlayerV2Inner = observer(
 
     const handleOpenSetting = useMemoizedFn(() => {
       // 全屏模式和docPIP内需要
-      if (isFullscreen || isDocPIP(videoPlayerRef.current)) {
-        if (!videoPlayerRef.current) return
-        window.openSettingPanel(videoPlayerRef.current)
+      const settingRenderTarget = videoPlayerRef.current
+      if (!settingRenderTarget) return
+
+      const targetWindow = ownerWindow(settingRenderTarget)
+      const isInForeignWindow = targetWindow !== window
+      if (
+        isFullscreen ||
+        isDocPIP(settingRenderTarget) ||
+        isInForeignWindow
+      ) {
+        if (isInForeignWindow) {
+          window.openSettingPanel({
+            renderTarget: targetWindow.document.body,
+          } as Parameters<typeof window.openSettingPanel>[0])
+          return
+        }
+
+        window.openSettingPanel(settingRenderTarget)
       } else {
         postMessageToTop(PostMessageEvent.openSettingPanel)
       }

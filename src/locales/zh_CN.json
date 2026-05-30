@@ -97,6 +97,7 @@
     "floatButtonPos": "位置",
     "leftTop": "左上",
     "rightTop": "右上",
+    "rightMiddle": "右侧居中",
     "leftBottom": "左下",
     "rightBottom": "右下",
     "visible": "是否显示",
@@ -190,7 +191,9 @@
   },
   "floatButton": {
     "closeTips": "您可以在扩展菜单中重新打开浮动按钮",
-    "smallUpdate": "小更新"
+    "smallUpdate": "小更新",
+    "startDanmakuPIP": "打开弹幕小窗",
+    "replaceVideo": "网页内替换播放"
   },
   "vp": {
     "speed": "倍速中 >>",

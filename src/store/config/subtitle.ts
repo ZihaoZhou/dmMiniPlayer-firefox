@@ -46,7 +46,8 @@ const config_subtitle = {
   }),
   subtitle_fontFamily: config({
     label: t('settingPanel.subtitleFontFamily'),
-    defaultValue: 'arial, microsoft yahei, pingfangsc ,helvetica, sans-serif',
+    defaultValue:
+      '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif',
   }),
 
   subtitle_autoSize: config({

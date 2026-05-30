@@ -11,6 +11,7 @@ import { getBrowserSyncStorage } from '@root/utils/storage'
 import { DRAG_POS } from '@root/shared/storeKey'
 
 const INIT_ATTR = 'rc-f-init'
+const FLOAT_BUTTON_LISTENER_KEY = '__DM_MINI_PLAYER_FLOAT_BUTTON_LISTENER__'
 async function initVideoFloatBtn(
   container: HTMLElement,
   vel: HTMLVideoElement,
@@ -72,4 +73,7 @@ const handleMousemove = throttle((e: MouseEvent) => {
   initVideoFloatBtn(...getVideoElInitFloatButtonData(videoTarget))
 }, 1000)
 
-window.addEventListener('mousemove', handleMousemove)
+if (!(window as any)[FLOAT_BUTTON_LISTENER_KEY]) {
+  ;(window as any)[FLOAT_BUTTON_LISTENER_KEY] = true
+  window.addEventListener('mousemove', handleMousemove)
+}

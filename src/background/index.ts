@@ -122,28 +122,35 @@ onMessage(WebextEvent.bgFetch, async (req) => {
 
 onMessage(WebextEvent.getup, () => 'hello')
 
-const getTabCapturePermission = () =>
-  new Promise<boolean>((res) => {
-    chrome.permissions.contains({ permissions: ['tabCapture'] }, (rs) => {
-      if (rs) return res(true)
-      chrome.permissions.request({ permissions: ['tabCapture'] }, (rs) => {
-        res(rs)
+if (process.env.EXTENSION_TARGET === 'firefox') {
+  onMessage(WebextEvent.getTabCapturePermission, () => false)
+  onMessage(WebextEvent.startTabCapture, () => ({
+    error: 'tabCapture unsupported',
+  }))
+} else {
+  const getTabCapturePermission = () =>
+    new Promise<boolean>((res) => {
+      chrome.permissions.contains({ permissions: ['tabCapture'] }, (rs) => {
+        if (rs) return res(true)
+        chrome.permissions.request({ permissions: ['tabCapture'] }, (rs) => {
+          res(rs)
+        })
       })
     })
-  })
 
-onMessage(WebextEvent.getTabCapturePermission, getTabCapturePermission)
-onMessage(WebextEvent.startTabCapture, (req) => {
-  const tabId = req.sender.tabId
-  return new Promise(async (res) => {
-    const hasPermission = await getTabCapturePermission()
-    if (!hasPermission) return res({ error: 'no permission' })
-    chrome.tabCapture.getMediaStreamId(
-      { targetTabId: tabId, consumerTabId: tabId },
-      (streamId) => res({ streamId }),
-    )
+  onMessage(WebextEvent.getTabCapturePermission, getTabCapturePermission)
+  onMessage(WebextEvent.startTabCapture, (req) => {
+    const tabId = req.sender.tabId
+    return new Promise(async (res) => {
+      const hasPermission = await getTabCapturePermission()
+      if (!hasPermission) return res({ error: 'no permission' })
+      chrome.tabCapture.getMediaStreamId(
+        { targetTabId: tabId, consumerTabId: tabId },
+        (streamId) => res({ streamId }),
+      )
+    })
   })
-})
+}
 
 const danmakuGetterCacheMap = new Map<
   string,

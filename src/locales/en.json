@@ -97,6 +97,7 @@
     "floatButtonPos": "Position",
     "leftTop": "Left top",
     "rightTop": "Right top",
+    "rightMiddle": "Right middle",
     "leftBottom": "Left bottom",
     "rightBottom": "Right bottom",
     "visible": "Visible",
@@ -190,7 +191,9 @@
   },
   "floatButton": {
     "closeTips": "You can reopen float button in extension menu",
-    "smallUpdate": "Small update"
+    "smallUpdate": "Small update",
+    "startDanmakuPIP": "Open danmaku mini player",
+    "replaceVideo": "Replace video in page"
   },
   "vp": {
     "speed": "Speed >>",

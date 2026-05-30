@@ -7,6 +7,10 @@ import PostMessageEvent, {
   BaseVideoState,
   PostMessageProtocolMap,
 } from '@root/shared/postMessageEvent'
+import {
+  POPUP_MESSAGE_KIND,
+  type PopupMessage,
+} from '@root/shared/popupMessage'
 import WebextEvent from '@root/shared/webextEvent'
 import configStore from '@root/store/config'
 import playerConfig from '@root/store/playerConfig'
@@ -26,29 +30,40 @@ import {
 } from '@root/utils/windowMessages'
 import { autorun } from 'mobx'
 import { onMessage as onBgMessage } from 'webext-bridge/content-script'
+import Browser from 'webextension-polyfill'
 import _getWebProvider from '../web-provider/getWebProvider'
 import './floatButton'
 
+const MAIN_INIT_KEY = '__DM_MINI_PLAYER_MAIN_INIT__'
+const FRAME_INIT_KEY = '__DM_MINI_PLAYER_FRAME_INIT__'
+
 // iframe里就不用运行了
 if (isTop) {
-  console.log('run content')
-  main()
+  if (!(window as any)[MAIN_INIT_KEY]) {
+    ;(window as any)[MAIN_INIT_KEY] = true
+    document.documentElement.setAttribute('dm-main-loaded', 'true')
+    console.log('run content')
+    main()
+  }
 } else {
-  // 处理top发来的请求检测video标签
-  onPostMessage(PostMessageEvent.detectVideo_req, () => {
-    postMessageToTop(
-      PostMessageEvent.detectVideo_resp,
-      dq('video').map((v, i) => {
-        return {
-          id: v.getAttribute('data-dm-vid') || '',
-          w: v.clientWidth,
-          h: v.clientHeight,
-          isMute: v.muted,
-          isPlaying: !v.paused,
-        }
-      }),
-    )
-  })
+  if (!(window as any)[FRAME_INIT_KEY]) {
+    ;(window as any)[FRAME_INIT_KEY] = true
+    // 处理top发来的请求检测video标签
+    onPostMessage(PostMessageEvent.detectVideo_req, () => {
+      postMessageToTop(
+        PostMessageEvent.detectVideo_resp,
+        dq('video').map((v, i) => {
+          return {
+            id: v.getAttribute('data-dm-vid') || '',
+            w: v.clientWidth,
+            h: v.clientHeight,
+            isMute: v.muted,
+            isPlaying: !v.paused,
+          }
+        }),
+      )
+    })
+  }
 }
 
 function main() {
@@ -83,8 +98,19 @@ function main() {
     // 避免多次open
     if (isWaiting) return
     isWaiting = true
-    await getProvider()?.openPlayer(props)
-    isWaiting = false
+    try {
+      await getProvider()?.openPlayer(props)
+    } finally {
+      isWaiting = false
+    }
+  }
+
+  const openPlayerSafely = (
+    props?: Parameters<WebProvider['openPlayer']>[0],
+  ) => {
+    openPlayer(props).catch((error) => {
+      console.error('Failed to open mini player', error)
+    })
   }
 
   const requestVideoPIP = async () => {
@@ -148,17 +174,33 @@ function main() {
 
     if (!navigator.userActivation.isActive) {
       waitingPageActive().then(() => {
-        openPlayer()
+        openPlayerSafely()
       })
       return { state: 'error', errType: 'user-activation' }
     }
 
-    openPlayer()
+    openPlayerSafely()
     return { state: 'ok' }
   }
 
   // 从popup点击的请求PIP，这种是粗略查找最大视频
   onBgMessage(WebextEvent.requestVideoPIP, requestVideoPIP)
+  Browser.runtime.onMessage.addListener((message: PopupMessage) => {
+    if (!message || message.kind !== POPUP_MESSAGE_KIND) return
+    switch (message.event) {
+      case WebextEvent.hello:
+        document.documentElement.setAttribute('dm-popup-hello', 'true')
+        return Promise.resolve('hi')
+      case WebextEvent.requestVideoPIP:
+        document.documentElement.setAttribute('dm-popup-request-pip', 'true')
+        return Promise.resolve(requestVideoPIP())
+      case WebextEvent.openSetting:
+        document.documentElement.setAttribute('dm-popup-open-setting', 'true')
+        window.openSettingPanel()
+        return Promise.resolve('ok')
+    }
+  })
+  document.documentElement.setAttribute('dm-popup-listener', 'true')
   // 从popup点击的弹出设置
   onBgMessage(WebextEvent.openSetting, () => {
     window.openSettingPanel()

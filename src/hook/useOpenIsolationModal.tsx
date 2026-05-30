@@ -1,6 +1,6 @@
 import { PartialIncludes } from '@root/utils/typeUtils'
 import { useMemoizedFn } from 'ahooks'
-import { isUndefined } from 'lodash-es'
+import { isUndefined } from '@root/utils/lodash'
 import { FC, ReactNode, useEffect, useRef, useState } from 'react'
 
 /**用来打开独立于App的modal, context需要放在同级的reactNode中 */

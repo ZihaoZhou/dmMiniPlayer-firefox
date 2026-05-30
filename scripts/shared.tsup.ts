@@ -2,13 +2,16 @@ import path from 'path'
 import { defineConfig } from 'tsup'
 import fs from 'fs-extra'
 import esbuildMetaUrl from '@chialab/esbuild-plugin-meta-url'
-import { manifest } from '../src/manifest'
+import { createManifest } from '../src/manifest'
 import packageJson from '../package.json'
 import { getChangeLog, getDefinesConfig, pr } from './utils.mjs'
 import { inlineImport } from './plugin/inlineImport'
 import { isDev, isTest } from './shared'
+import { extensionTarget } from './buildTarget'
+import { createBuildManifest } from './manifestUtils'
 
 const version = packageJson.version
+export const manifest = createManifest(extensionTarget)
 
 export const tsconfig = pr('../tsconfig.json')
 export const outDir = pr('../dist')
@@ -22,6 +25,7 @@ export const shareConfig = {
     Object.assign(options.alias, {
       '@root': pr('../src'),
       '@pkgs': pr('../packages'),
+      'resize-observer-polyfill': pr('../src/utils/resizeObserverPolyfill.ts'),
       // react: 'preact/compat',
       // 'react-dom/test-utils': 'preact/test-utils',
       // 'react-dom': 'preact/compat', // 必须放在 test-utils 下面
@@ -73,20 +77,9 @@ export const shareConfig = {
     })
     fs.copySync(pr('../assets'), pr(outDir, './assets'))
 
-    manifest.web_accessible_resources = [
-      {
-        resources: fs.readdirSync(pr(outDir)),
-        matches: ['<all_urls>'],
-      },
-      {
-        resources: ['assets/icon.png'],
-        matches: ['<all_urls>'],
-      },
-    ]
-
-    if (isDev) {
-      manifest.permissions?.push('scripting')
-    }
+    const manifest = createBuildManifest(fs.readdirSync(pr(outDir)), {
+      includeScripting: isDev,
+    })
     fs.writeJSONSync(pr(outDir, './manifest.json'), manifest, { spaces: 2 })
 
     const popupHtmlFile = pr('../src/popup/index.html')
@@ -102,6 +95,7 @@ export const shareConfig = {
     'process.env.NODE_ENV': process.env.NODE_ENV
       ? `"${process.env.NODE_ENV}"`
       : '"development"',
+    'process.env.EXTENSION_TARGET': `"${extensionTarget}"`,
     ...getDefinesConfig(envFileName, {
       upgrade_en: getChangeLog(version)?.replaceAll('\n', '\\n'),
       upgrade_zh: getChangeLog(version, 'zh')?.replaceAll('\n', '\\n'),
@@ -110,5 +104,3 @@ export const shareConfig = {
   },
   platform: 'browser',
 } satisfies Parameters<typeof defineConfig>[0]
-
-export { manifest }

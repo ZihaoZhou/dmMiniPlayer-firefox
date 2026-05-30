@@ -57,7 +57,7 @@ nvm_auto_use() {
 # Check if nvm command exists
 if ! command -v nvm >/dev/null 2>&1; then
   echo "[nvm-auto-use] Error: nvm命令不存在。请确保nodejs版本和package.json中的node版本一致。"
-  return 0
+  exit 0
 fi
 
 nvm_auto_use

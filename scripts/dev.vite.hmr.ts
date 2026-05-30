@@ -1,11 +1,12 @@
 import react from '@vitejs/plugin-react'
 import fs from 'fs-extra'
 import { defineConfig } from 'vite'
-import { manifest } from '../src/manifest'
 
 import packageJson from '../package.json'
 import { DEV_PORT } from '../src/shared/constants'
 import { getChangeLog, pr } from './utils.mjs'
+import { createBuildManifest } from './manifestUtils'
+import { extensionTarget } from './buildTarget'
 
 export const outDir = pr('../dist')
 const version = packageJson.version
@@ -39,18 +40,9 @@ export default defineConfig({
           fs.copySync(pr(entryAllFramesPath, file), pr(outDir, file))
         })
 
-        manifest.web_accessible_resources = [
-          {
-            resources: fs.readdirSync(pr(outDir)),
-            matches: ['<all_urls>'],
-          },
-          {
-            resources: ['assets/icon.png'],
-            matches: ['<all_urls>'],
-          },
-        ]
-
-        manifest.permissions?.push('scripting')
+        const manifest = createBuildManifest(fs.readdirSync(pr(outDir)), {
+          includeScripting: true,
+        })
         fs.writeJSONSync(pr(outDir, './manifest.json'), manifest, { spaces: 2 })
 
         const popupHtmlFile = pr('../src/popup/index.html')
@@ -78,6 +70,7 @@ export default defineConfig({
     'process.env.NODE_ENV': process.env.NODE_ENV
       ? `"${process.env.NODE_ENV}"`
       : '"development"',
+    'process.env.EXTENSION_TARGET': `"${extensionTarget}"`,
     'process.env.upgrade_en': `"${getChangeLog(version)?.replaceAll('\n', '\\n')}"`,
     'process.env.upgrade_zh': `"${getChangeLog(version, 'zh')?.replaceAll(
       '\n',

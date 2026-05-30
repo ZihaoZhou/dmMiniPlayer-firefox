@@ -27,11 +27,11 @@ import {
   LOCALE,
 } from '@root/shared/storeKey'
 import isPluginEnv from '@root/shared/isPluginEnv'
-import { isUndefined } from 'lodash-es'
+import { isUndefined } from '@root/utils/lodash'
 import isDev from '@root/shared/isDev'
 import Browser from 'webextension-polyfill'
 import { ATTR_DISABLE_INJECT_PIP } from '@root/shared/config'
-import config_floatButton from './floatButton'
+import config_floatButton, { FloatButtonPos } from './floatButton'
 import config_shortcut from './shortcut'
 import config_subtitle from './subtitle'
 import config_specialWebsites from './specialWebsites'
@@ -303,8 +303,8 @@ export const baseConfigMap = {
 
 const {
   configStore,
-  openSettingPanel,
-  closeSettingPanel,
+  openSettingPanel: rawOpenSettingPanel,
+  closeSettingPanel: rawCloseSettingPanel,
   observe,
   updateConfig: _updateConfig,
   saveConfig,
@@ -364,16 +364,177 @@ const {
       delete loadedConfig.movePIPInOpen
     }
 
+    if (
+      savedConfig?.floatButtonPos === FloatButtonPos.leftTop &&
+      (savedConfig.floatButtonX === undefined ||
+        Number(savedConfig.floatButtonX) === 5) &&
+      (savedConfig.floatButtonY === undefined ||
+        Number(savedConfig.floatButtonY) === 5)
+    ) {
+      loadedConfig.floatButtonPos = FloatButtonPos.rightMiddle
+      loadedConfig.floatButtonX = 24
+      loadedConfig.floatButtonY = 5
+      await setBrowserSyncStorage(DM_MINI_PLAYER_CONFIG, {
+        ...savedConfig,
+        floatButtonPos: loadedConfig.floatButtonPos,
+        floatButtonX: loadedConfig.floatButtonX,
+        floatButtonY: loadedConfig.floatButtonY,
+      })
+    }
+
     oldConfig = loadedConfig
 
     return loadedConfig
   },
   useShadowDom: isPluginEnv,
-  ...(isPluginEnv && isDev
-    ? { styleHref: Browser.runtime.getURL('/setting-panel.css') }
+  ...(isPluginEnv
+    ? {
+        styleHref: `${Browser.runtime.getURL('/setting-panel.css')}?t=${Date.now()}`,
+      }
     : {}),
 })
 let oldConfig: Partial<typeof configStore>
+
+type OpenSettingPanelArg = Parameters<typeof rawOpenSettingPanel>[0]
+
+let cleanupSettingPanelAffordance = () => {}
+
+function isHTMLElementLike(value: unknown): value is HTMLElement {
+  return (
+    !!value &&
+    typeof (value as HTMLElement).appendChild === 'function' &&
+    (value as HTMLElement).nodeType === 1
+  )
+}
+
+function getSettingPanelRenderTarget(arg?: OpenSettingPanelArg) {
+  if (isHTMLElementLike(arg)) return arg
+  const renderTarget = (arg as { renderTarget?: unknown } | undefined)
+    ?.renderTarget
+  if (isHTMLElementLike(renderTarget)) return renderTarget
+  return document.body
+}
+
+function getSettingPanelRoot(
+  renderTarget: HTMLElement,
+  previousChildren: Set<Element>,
+) {
+  return (
+    [...renderTarget.children].find((child) => !previousChildren.has(child)) ??
+    renderTarget.lastElementChild ??
+    renderTarget
+  )
+}
+
+function queryDeep<T extends Element>(
+  root: ParentNode,
+  selector: string,
+): T | null {
+  const direct = root.querySelector(selector)
+  if (direct) return direct as T
+
+  for (const el of root.querySelectorAll('*')) {
+    if (!el.shadowRoot) continue
+    const found = queryDeep<T>(el.shadowRoot, selector)
+    if (found) return found
+  }
+
+  return null
+}
+
+function installSettingPanelAffordance(panelRoot: Element) {
+  const targetDocument = panelRoot.ownerDocument ?? document
+  const targetWindow = targetDocument.defaultView
+  let attempts = 0
+  let timeoutId = 0
+  let closeButton: HTMLButtonElement | undefined
+  let coverBg: HTMLElement | null = null
+  let disposed = false
+
+  const close = (event?: Event) => {
+    event?.preventDefault()
+    event?.stopPropagation()
+    closeSettingPanel()
+  }
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') close(event)
+  }
+  const handleCoverClose = () => {
+    targetWindow?.setTimeout(cleanupSettingPanelAffordance, 0)
+  }
+
+  cleanupSettingPanelAffordance = () => {
+    disposed = true
+    if (timeoutId) targetWindow?.clearTimeout(timeoutId)
+    closeButton?.removeEventListener('click', close)
+    targetDocument.removeEventListener('keydown', handleKeydown)
+    coverBg?.removeEventListener('click', handleCoverClose)
+    closeButton?.remove()
+    cleanupSettingPanelAffordance = () => {}
+  }
+
+  const install = () => {
+    if (disposed) return
+
+    const renderRoot = queryDeep<HTMLElement>(panelRoot, '.render-root')
+    const panel = queryDeep<HTMLElement>(panelRoot, '.setting-panel')
+    if (!renderRoot || !panel) {
+      if (attempts++ < 20) {
+        timeoutId = targetWindow?.setTimeout(install, 50) ?? 0
+      }
+      return
+    }
+
+    if (queryDeep(renderRoot, '.dm-setting-panel-close')) return
+
+    closeButton = targetDocument.createElement('button')
+    closeButton.type = 'button'
+    closeButton.className = 'dm-setting-panel-close'
+    closeButton.textContent = '×'
+    closeButton.setAttribute('aria-label', 'Close settings')
+    Object.assign(closeButton.style, {
+      position: 'fixed',
+      top: 'max(8px, calc(var(--top, 20vh) - 40px))',
+      left: 'min(calc(50% + 300px), calc(100vw - 8px))',
+      transform: 'translateX(-100%)',
+      zIndex: '10000000',
+      width: '32px',
+      height: '32px',
+      border: '0',
+      borderRadius: '6px',
+      background: 'rgba(0, 0, 0, 0.62)',
+      color: '#fff',
+      font: '20px/32px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      textAlign: 'center',
+      cursor: 'pointer',
+      padding: '0',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.24)',
+    })
+
+    closeButton.addEventListener('click', close)
+    targetDocument.addEventListener('keydown', handleKeydown)
+    coverBg = queryDeep<HTMLElement>(renderRoot, '.cover-bg')
+    coverBg?.addEventListener('click', handleCoverClose)
+    renderRoot.appendChild(closeButton)
+  }
+
+  install()
+}
+
+const closeSettingPanel = () => {
+  cleanupSettingPanelAffordance()
+  rawCloseSettingPanel()
+}
+
+const openSettingPanel: typeof rawOpenSettingPanel = (arg) => {
+  closeSettingPanel()
+  const renderTarget = getSettingPanelRenderTarget(arg)
+  const previousChildren = new Set([...renderTarget.children])
+  rawOpenSettingPanel(arg)
+  installSettingPanelAffordance(
+    getSettingPanelRoot(renderTarget, previousChildren),
+  )
+}
 
 const updateConfig = async (config?: Partial<typeof configStore>) => {
   config ??= await getBrowserSyncStorage(DM_MINI_PLAYER_CONFIG)

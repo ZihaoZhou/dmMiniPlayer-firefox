@@ -1,27 +1,21 @@
-import { SettingOutlined } from '@ant-design/icons'
 import { useOnce } from '@root/hook'
 import useAutoPIPHandler from '@root/hook/useAutoPIPHandler'
 import useDebounceTimeoutCallback from '@root/hook/useDebounceTimeoutCallback'
 import useTargetEventListener from '@root/hook/useTargetEventListener'
 import { VIDEO_ID_ATTR } from '@root/shared/config'
-import env from '@root/shared/env'
 import isPluginEnv from '@root/shared/isPluginEnv'
 import PostMessageEvent from '@root/shared/postMessageEvent'
-import { FLOAT_BTN_HIDDEN, LATEST_SAVE_VERSION } from '@root/shared/storeKey'
+import { FLOAT_BTN_HIDDEN } from '@root/shared/storeKey'
 import configStore from '@root/store/config'
 import { FloatButtonPos } from '@root/store/config/floatButton'
 import playerConfig from '@root/store/playerConfig'
 import { DocPIPRenderType } from '@root/types/config'
 import { throttle, tryCatch, uuid } from '@root/utils'
-import { getIsZh, t } from '@root/utils/i18n'
+import { t } from '@root/utils/i18n'
 import { postStartPIPDataMsg } from '@root/utils/pip'
-import {
-  setBrowserLocalStorage,
-  useBrowserLocalStorage,
-  useBrowserSyncStorage,
-} from '@root/utils/storage'
+import { useBrowserSyncStorage } from '@root/utils/storage'
 import { sendMediaStreamInSender } from '@root/utils/webRTC'
-import { onPostMessage, postMessageToTop } from '@root/utils/windowMessages'
+import { onPostMessage } from '@root/utils/windowMessages'
 import getWebProvider from '@root/web-provider/getWebProvider'
 import { useMemoizedFn, useSize, useUnmount } from 'ahooks'
 import classNames from 'classnames'
@@ -43,25 +37,13 @@ const FloatButton: FC<Props> = (props) => {
   const { container, vel, fixedPos } = props
 
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [changeLog] = useState(() => {
-    const log = getIsZh() ? env.upgrade_zh : env.upgrade_en
-    return log || t('floatButton.smallUpdate')
-  })
-  const [savedVer, setSavedVer] = useState('')
+  const startPIPLabel = t('floatButton.startDanmakuPIP')
+  const replaceLabel = t('floatButton.replaceVideo')
 
   useOnce(() =>
     useBrowserSyncStorage(FLOAT_BTN_HIDDEN, (hidden) => {
       if (!floatBtn.current) return
       floatBtn.current.style.visibility = !hidden ? 'visible' : 'hidden'
-    }),
-  )
-
-  const [isUpgradeShow, setUpgradeShow] = useState(false)
-
-  useOnce(() =>
-    useBrowserLocalStorage(LATEST_SAVE_VERSION, (ver) => {
-      setUpgradeShow(ver !== env.version)
-      if (ver) setSavedVer(ver)
     }),
   )
 
@@ -81,12 +63,35 @@ const FloatButton: FC<Props> = (props) => {
   // @see https://developer.mozilla.org/zh-CN/docs/Web/CSS/position#fixed
   const setFixedPosIn = useMemoizedFn(() => {
     if (!floatBtn.current) return
-    const { left, top } = vel.getBoundingClientRect()
-    ;(floatBtn.current as any).style = `left:${
-      left + configStore.floatButtonX
-    }px !important;top:${
-      top + configStore.floatButtonY
-    }px !important;position:fixed !important;`
+    const rect = vel.getBoundingClientRect()
+    const x = +configStore.floatButtonX
+    const y = +configStore.floatButtonY
+    const styleByPos = (() => {
+      switch (configStore.floatButtonPos) {
+        case FloatButtonPos.leftBottom:
+          return `left:${rect.left + x}px !important;bottom:${
+            window.innerHeight - rect.bottom + y
+          }px !important;`
+        case FloatButtonPos.rightBottom:
+          return `right:${window.innerWidth - rect.right + x}px !important;bottom:${
+            window.innerHeight - rect.bottom + y
+          }px !important;`
+        case FloatButtonPos.rightTop:
+          return `right:${window.innerWidth - rect.right + x}px !important;top:${
+            rect.top + y
+          }px !important;`
+        case FloatButtonPos.rightMiddle:
+          return `right:${window.innerWidth - rect.right + x}px !important;top:${
+            rect.top + rect.height / 2
+          }px !important;transform:translateY(-50%) !important;`
+        case FloatButtonPos.leftTop:
+        default:
+          return `left:${rect.left + x}px !important;top:${
+            rect.top + y
+          }px !important;`
+      }
+    })()
+    ;(floatBtn.current as any).style = `${styleByPos}position:fixed !important;`
   })
 
   const floatBtn = useRef<HTMLDivElement>(null)
@@ -201,10 +206,6 @@ const FloatButton: FC<Props> = (props) => {
     return true
   })
 
-  const handleOpenSetting = useMemoizedFn(() => {
-    postMessageToTop(PostMessageEvent.openSettingPanel)
-  })
-
   // 处理top发来的更新video状态的消息
   useOnce(() =>
     onPostMessage(PostMessageEvent.updateVideoState, (data) => {
@@ -253,6 +254,12 @@ const FloatButton: FC<Props> = (props) => {
         return {
           right: +configStore.floatButtonX,
           top: +configStore.floatButtonY,
+        }
+      case FloatButtonPos.rightMiddle:
+        return {
+          right: +configStore.floatButtonX,
+          top: '50%',
+          transform: 'translateY(-50%)',
         }
     }
   }, [
@@ -350,21 +357,24 @@ const FloatButton: FC<Props> = (props) => {
               isHoverLockRef.current = false
             }}
           >
-            <div className="f-i-center w-fit overflow-hidden rounded h-[28px]">
+            <div className="f-i-center w-fit overflow-hidden rounded-md h-[42px] shadow-btn-shadow">
               <div
                 className={classNames(
                   'start-pip-btn',
-                  'f-center wh-[32px,28px] bg-bg hover:bg-bg-hover transition-colors',
+                  'f-center wh-[46px,42px] bg-[#0669ff75] hover:bg-[#0669ffcc] transition-colors',
                 )}
+                role="button"
+                title={startPIPLabel}
+                aria-label={startPIPLabel}
                 onClick={(e) => {
                   e.stopPropagation()
                   handleStartPIP()
                 }}
               >
                 <img
-                  className="wh-[16px]"
-                  width={16}
-                  height={16}
+                  className="wh-[22px] shrink-0"
+                  width={22}
+                  height={22}
                   src={
                     isPluginEnv
                       ? `${Browser.runtime.getURL('/assets/icon.png')}`
@@ -376,8 +386,11 @@ const FloatButton: FC<Props> = (props) => {
                 <div
                   className={classNames(
                     'replace-btn',
-                    'f-center wh-[32px,28px] bg-bg hover:bg-bg-hover transition-colors',
+                    'f-center wh-[38px,42px] bg-bg hover:bg-bg-hover transition-colors',
                   )}
+                  role="button"
+                  title={replaceLabel}
+                  aria-label={replaceLabel}
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -402,88 +415,7 @@ const FloatButton: FC<Props> = (props) => {
                   <ReplaceIcon width={16} height={16} className="w-[16px]" />
                 </div>
               )}
-              <div
-                className={classNames(
-                  'setting-btn',
-                  'f-center wh-[32px,28px] bg-bg hover:bg-bg-hover transition-colors',
-                )}
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-
-                  isLockRef.current = true
-                  clear()
-                  showFloatBtn()
-                  setTimeout(() => {
-                    isLockRef.current = false
-                  }, 500)
-
-                  handleOpenSetting()
-                }}
-              >
-                <SettingOutlined width={16} height={16} />
-              </div>
             </div>
-
-            {isUpgradeShow && (
-              <>
-                <div className="absolute top-[-2px] right-[-2px] rounded-full wh-[8px] bg-red-500"></div>
-                <div
-                  className={classNames(
-                    'absolute max-w-[250px] w-max bg-bg overflow-hidden max-h-0 transition-all group-hover:max-h-[300px] text-[12px] rounded',
-                    'flex flex-col',
-                    {
-                      'left-[var(--x)] top-[var(--y)]':
-                        configStore.floatButtonPos === FloatButtonPos.leftTop,
-                      'left-[var(--x)] bottom-[var(--y)]':
-                        configStore.floatButtonPos ===
-                        FloatButtonPos.leftBottom,
-                      'right-[var(--x)] top-[var(--y)]':
-                        configStore.floatButtonPos === FloatButtonPos.rightTop,
-                      'right-[var(--x)] bottom-[var(--y)]':
-                        configStore.floatButtonPos ===
-                        FloatButtonPos.rightBottom,
-                    },
-                  )}
-                  style={{
-                    '--y': 'calc(100% + 4px)',
-                    '--x': '0',
-                  }}
-                >
-                  <p className="f-i-center mb-1 px-1 pt-1">
-                    NEW: {savedVer || ''} -&gt; {env.version}{' '}
-                    <a
-                      href={
-                        'https://github.com/apades/dmMiniPlayer/blob/main/docs/changeLog' +
-                        `${getIsZh() ? '-zh' : ''}` +
-                        `.md#v${env.version.replaceAll('.', '')}`
-                      }
-                      target="_blank"
-                      className="ml-auto text-blue-500"
-                    >
-                      More
-                    </a>
-                  </p>
-                  <div className="flex-1 overflow-auto px-1 custom-scrollbar text-left whitespace-pre-wrap">
-                    {changeLog}
-                  </div>
-                  <div className="f-i-center px-1 pb-1">
-                    <div
-                      className="ml-auto cursor-pointer bg-bg-hover px-1 rounded"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        e.preventDefault()
-                        setBrowserLocalStorage(LATEST_SAVE_VERSION, env.version)
-                        setUpgradeShow(false)
-                        isHoverLockRef.current = false
-                      }}
-                    >
-                      OK
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
           </div>
           {/* </DraggerContainer> */}
         </AppRoot>,

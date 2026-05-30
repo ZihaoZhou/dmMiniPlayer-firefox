@@ -26,7 +26,8 @@ export function useBrowserLocalStorage<
   })
   return () => {
     if (key === LATEST_SAVE_VERSION) console.log('remove')
-    localCallbacksMap[key].slice(localCallbacksMap[key].indexOf(callback), 1)
+    const index = localCallbacksMap[key].indexOf(callback)
+    if (index >= 0) localCallbacksMap[key].splice(index, 1)
   }
 }
 
@@ -71,7 +72,8 @@ export function useBrowserSyncStorage<
     callback(val)
   })
   return () => {
-    syncCallbacksMap[key].slice(syncCallbacksMap[key].indexOf(callback), 1)
+    const index = syncCallbacksMap[key].indexOf(callback)
+    if (index >= 0) syncCallbacksMap[key].splice(index, 1)
   }
 }
 

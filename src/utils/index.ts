@@ -193,9 +193,10 @@ export function splitArray<T>(arr: T[], count: number): T[][] {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export function isPromiseFunction(fn: Function): boolean {
+  const ctor = (fn as any)?.constructor ?? (fn as any)?.__proto__?.constructor
   return (
-    (fn as any).__proto__.constructor ==
-    'function AsyncFunction() { [native code] }'
+    ctor?.name === 'AsyncFunction' ||
+    Object.prototype.toString.call(fn) === '[object AsyncFunction]'
   )
 }
 

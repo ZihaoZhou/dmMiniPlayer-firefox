@@ -59,7 +59,13 @@ const AppRoot: FC<Props> = (props) => {
     <appRootContext.Provider value={{ rootRef: containerRef }}>
       <div
         ref={containerRef}
-        style={{ all: 'initial', visibility: isDev ? undefined : 'hidden' }}
+        style={{
+          all: 'initial',
+          fontFamily:
+            'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+          fontSize: '14px',
+          visibility: isDev ? undefined : 'hidden',
+        }}
       >
         {root instanceof ShadowRoot
           ? createPortal(props.children, root)

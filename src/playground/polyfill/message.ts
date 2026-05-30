@@ -1,5 +1,5 @@
 // 这里是mac端和web通信的定义
-import { cloneDeep } from 'lodash-es'
+import { cloneDeep } from '@root/utils/lodash'
 import _env from './env'
 
 if (_env.platform === 'web') {

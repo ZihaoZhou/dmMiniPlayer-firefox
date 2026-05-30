@@ -1,4 +1,4 @@
-import { isArray, isNull, isObject } from 'lodash-es'
+import { isArray, isNull, isObject } from '@root/utils/lodash'
 import _env from '../env'
 import { sendMessageWaitResp } from '../message'
 import { addCallback, executeCallback, removeCallback } from '.'

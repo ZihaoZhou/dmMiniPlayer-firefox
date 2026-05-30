@@ -1,7 +1,7 @@
 /**
  * 参考自 https://github.com/js-cookie/js-cookie/blob/main/src/api.mjs
  */
-import { assign } from 'lodash-es'
+import { assign } from '@root/utils/lodash'
 
 type CookieHandler = {
   get: (name: string) => string | undefined

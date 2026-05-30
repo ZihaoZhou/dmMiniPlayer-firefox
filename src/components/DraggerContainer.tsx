@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { isObject } from 'lodash-es'
+import { isObject } from '@root/utils/lodash'
 import {
   Children,
   cloneElement,

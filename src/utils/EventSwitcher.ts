@@ -1,4 +1,4 @@
-import { isBoolean } from 'lodash-es'
+import { isBoolean } from '@root/utils/lodash'
 import { isObject } from '.'
 
 /**

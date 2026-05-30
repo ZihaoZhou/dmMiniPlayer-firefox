@@ -147,6 +147,7 @@ export default abstract class DanmakuEngine extends Events2<DanmakuEngineEvents>
 
   init(props: DanmakuEngineInitProps) {
     if (this.initd) return
+    document.documentElement.setAttribute('dm-danmaku-engine-init', 'start')
     this.resizeObserver.unobserve(this.container)
     // 处理弹幕偏移时间
     this.unloadCallbacks.push(
@@ -167,6 +168,7 @@ export default abstract class DanmakuEngine extends Events2<DanmakuEngineEvents>
     this.resizeObserver.observe(this.container)
     this.initd = true
     this.initLock.ok()
+    document.documentElement.setAttribute('dm-danmaku-engine-init', 'ok')
   }
 
   runningDanmakus = new Set<DanmakuBase>()
@@ -181,12 +183,16 @@ export default abstract class DanmakuEngine extends Events2<DanmakuEngineEvents>
         })
       }),
     )
+    document.documentElement.setAttribute(
+      'dm-danmaku-engine-count',
+      String(this.danmakus.length),
+    )
   }
 
   async setDanmakus(danmakus: DanmakuInitData[]) {
     await this.initLock.waiting()
     this.resetState()
-    this.addDanmakus(danmakus)
+    await this.addDanmakus(danmakus)
     this.hasSeek = true
   }
 

@@ -1,31 +1,20 @@
 import { defineConfig } from 'tsup'
 import fs from 'fs-extra'
 import { omit } from '@root/utils'
-import { manifest, outDir, shareConfig } from './shared.tsup'
+import { outDir, shareConfig } from './shared.tsup'
 import { pr } from './utils.mjs'
-import { isDev } from './shared'
 import { outputListener } from './plugin/outputListener'
+import { createBuildManifest } from './manifestUtils'
+import { writeSettingPanelCss } from './settingPanelCss'
 
 export default defineConfig({
   ...omit(shareConfig, ['onSuccess']),
   esbuildPlugins: [...shareConfig.esbuildPlugins, outputListener()],
   async onSuccess() {
-    fs.copySync(
-      pr('../node_modules/@apad/setting-panel/lib/index.css'),
-      pr(outDir, './setting-panel.css'),
-    )
-    manifest.web_accessible_resources = [
-      {
-        resources: fs.readdirSync(pr(outDir)),
-        matches: ['<all_urls>'],
-      },
-      {
-        resources: ['assets/icon.png'],
-        matches: ['<all_urls>'],
-      },
-    ]
-
-    manifest.permissions?.push('scripting')
+    writeSettingPanelCss(pr(outDir, './setting-panel.css'))
+    const manifest = createBuildManifest(fs.readdirSync(pr(outDir)), {
+      includeScripting: true,
+    })
     fs.writeJSONSync(pr(outDir, './manifest.json'), manifest, { spaces: 2 })
   },
   entry: {

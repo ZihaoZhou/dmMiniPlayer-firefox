@@ -80,7 +80,8 @@ const config_danmaku = {
     label: t('settingPanel.fontWeight'),
   }),
   fontFamily: config({
-    defaultValue: 'Segoe UI Emoji, SimHei, "microsoft yahei", sans-serif',
+    defaultValue:
+      '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, "Apple Color Emoji", "Segoe UI Emoji", sans-serif',
     label: t('settingPanel.fontFamily'),
   }),
   gap: config({

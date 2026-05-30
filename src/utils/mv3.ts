@@ -1,10 +1,11 @@
 import { Nullable } from './typeUtils'
+import Browser from 'webextension-polyfill'
 
 export const mv3MoveTabsToPosition = (
   tab: chrome.tabs.Tab,
   position: [number, number],
 ) => {
-  return chrome.windows.update(tab.windowId, {
+  return Browser.windows.update(tab.windowId, {
     left: position[0],
     top: position[1],
   })
@@ -14,14 +15,14 @@ export const mv3UpdateTab = (
   tab: chrome.tabs.Tab,
   data: chrome.windows.UpdateInfo,
 ) => {
-  return chrome.windows.update(tab.windowId, data)
+  return Browser.windows.update(tab.windowId, data)
 }
 
 export const mv3ResizeTabs = (
   tab: chrome.tabs.Tab,
   position: { width: number; height: number },
 ) => {
-  return chrome.windows.update(tab.windowId, {
+  return Browser.windows.update(tab.windowId, {
     width: position.width,
     height: position.height,
   })
@@ -35,8 +36,8 @@ export const mv3GetDocPIPTab = (
   const id = getDocPIPTabId()
   console.log('id', id)
   return id
-    ? chrome.tabs.get(id)
-    : chrome.tabs.query({ active: true }).then((tabs) => {
+    ? Browser.tabs.get(id)
+    : Browser.tabs.query({ active: true }).then((tabs) => {
         // 😅莫名其妙的实际width会少1
         return tabs.find(
           (tab) =>

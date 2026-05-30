@@ -4,7 +4,7 @@
 
 import { dq1, type noop } from '@root/utils'
 import equal from 'fast-deep-equal'
-import { isUndefined } from 'lodash-es'
+import { isUndefined } from '@root/utils/lodash'
 import { onMessage_inject, sendMessage_inject } from './injectListener'
 import { eventHackerEnableSites } from './eventHacker.config'
 

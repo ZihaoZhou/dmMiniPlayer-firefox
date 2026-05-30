@@ -1,7 +1,7 @@
 import PostMessageEvent, {
   PostMessageProtocolMap,
 } from '@root/shared/postMessageEvent'
-import { isArray } from 'lodash-es'
+import { isArray } from '@root/utils/lodash'
 import mitt from 'mitt'
 import Events2 from './Events2'
 import { dq, isUndefined } from '.'
@@ -55,11 +55,17 @@ export function postMessageToChild<
 
 const eventSource = new Events2()
 window.addEventListener('message', (event) => {
-  if (event.data?.ID !== ID) return
-  eventSource.emit(event.data.type, {
-    data: event.data.data,
-    source: event.source,
-  })
+  try {
+    const data = event.data
+    if (data?.ID !== ID) return
+    eventSource.emit(data.type, {
+      data: data.data,
+      source: event.source,
+    })
+  } catch (error) {
+    // Some pages post cross-origin wrapped objects whose getters can throw.
+    // Ignore those unrelated messages instead of breaking our bridge.
+  }
 })
 
 export function onPostMessage<T extends PostMessageEvent>(

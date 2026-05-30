@@ -2,7 +2,7 @@ import { FC, useContext } from 'react'
 import { useToaster, toast } from 'react-hot-toast'
 import { useOnce } from '@root/hook'
 import { PlayerEvent } from '@root/core/event'
-import { isString } from 'lodash-es'
+import { isString } from '@root/utils/lodash'
 import isDev from '@root/shared/isDev'
 import vpContext from './context'
 

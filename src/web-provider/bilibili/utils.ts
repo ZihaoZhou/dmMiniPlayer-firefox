@@ -9,8 +9,12 @@ import {
   getTextByType,
 } from '@root/danmaku/bilibili/videoBarrageClient/bilibili-evaolved/download/utils'
 import configStore from '@root/store/config'
+import PostMessageEvent from '@root/shared/postMessageEvent'
 import { onceCall, wait } from '@root/utils'
 import AssParser from '@root/utils/AssParser'
+import { onPostMessage, postMessageToTop } from '@root/utils/windowMessages'
+
+const isFirefoxTarget = process.env.EXTENSION_TARGET === 'firefox'
 
 const videoInfoReqCache = new Map<string, any>()
 
@@ -67,8 +71,26 @@ export function getSubtitle(url: string): Promise<BiliBiliSubtitleRes> {
 }
 
 export const getDanmakus = onceCall(async (aid: string, cid: string) => {
+  document.documentElement.setAttribute('dm-bili-danmaku-fetch-stage', 'start')
+  document.documentElement.setAttribute('dm-bili-danmaku-aid', aid)
+  document.documentElement.setAttribute('dm-bili-danmaku-cid', cid)
   if (!configStore.biliVideoDansFromBiliEvaolved) {
-    return getBiliBiliVideoDanmu(cid)
+    document.documentElement.setAttribute(
+      'dm-bili-danmaku-fetch-stage',
+      'list-so',
+    )
+    const danmakus = isFirefoxTarget
+      ? await getBiliBiliVideoDanmuInPageWorld(cid)
+      : await getBiliBiliVideoDanmu(cid)
+    document.documentElement.setAttribute(
+      'dm-bili-danmaku-fetch-stage',
+      'done',
+    )
+    document.documentElement.setAttribute(
+      'dm-bili-danmaku-fetch-count',
+      String(danmakus.length),
+    )
+    return danmakus
   } else {
     // 走bili-evaolved的
     let danmuContent = await getTextByType(
@@ -93,6 +115,76 @@ export const getDanmakus = onceCall(async (aid: string, cid: string) => {
     }
   }
 })
+
+export async function getVideoInfoFromUrlInPageWorld(_url: string) {
+  const id = createRequestId()
+  document.documentElement.setAttribute('dm-bili-content-info-send', id)
+  const response = await waitForPostMessage(
+    PostMessageEvent.bilibiliVideoInfo_resp,
+    id,
+    () => {
+      postMessageToTop(PostMessageEvent.bilibiliVideoInfo, {
+        id,
+        url: _url,
+      })
+    },
+  )
+  document.documentElement.setAttribute('dm-bili-content-info-recv', id)
+  if (!response.isOk || !response.aid || !response.cid) {
+    throw new Error(response.errMsg || 'Failed to get Bilibili video info')
+  }
+  return {
+    aid: response.aid,
+    bid: response.bid || '',
+    cid: response.cid,
+  }
+}
+
+async function getBiliBiliVideoDanmuInPageWorld(
+  cid: string,
+): Promise<DanmakuInitData[]> {
+  const id = createRequestId()
+  document.documentElement.setAttribute('dm-bili-content-danmaku-send', id)
+  const response = await waitForPostMessage(
+    PostMessageEvent.bilibiliDanmaku_resp,
+    id,
+    () => {
+      postMessageToTop(PostMessageEvent.bilibiliDanmaku, {
+        id,
+        cid,
+      })
+    },
+  )
+  document.documentElement.setAttribute('dm-bili-content-danmaku-recv', id)
+  if (!response.isOk || !response.danmakus) {
+    throw new Error(response.errMsg || 'Failed to get Bilibili danmaku')
+  }
+  return response.danmakus as DanmakuInitData[]
+}
+
+function createRequestId() {
+  return `dm-bili-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function waitForPostMessage<T extends PostMessageEvent>(
+  type: T,
+  id: string,
+  send: () => void,
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      unListen()
+      reject(new Error(`Timed out waiting for ${type}`))
+    }, 10000)
+    const unListen = onPostMessage(type, (data: any) => {
+      if (data.id !== id) return
+      window.clearTimeout(timer)
+      unListen()
+      resolve(data)
+    })
+    send()
+  })
+}
 
 const getBidAndAidFromURL = (url: URL) => {
   // /list/* 列表播放模式的bvid在query里

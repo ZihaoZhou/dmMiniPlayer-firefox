@@ -9,9 +9,11 @@ import { t } from '@root/utils/i18n'
 import { getVideoInfoFromUrl } from '@pkgs/danmakuGetter/apiDanmaku/bilibili/BilibiliVideo'
 import toast from 'react-hot-toast'
 import { sendMessage } from '@root/inject/contentSender'
-import { getDanmakus } from '../utils'
+import { getDanmakus, getVideoInfoFromUrlInPageWorld } from '../utils'
 import BiliBiliPreviewManager from './PreviewManager'
 import BilibiliSubtitleManager from './SubtitleManager'
+
+const isFirefoxTarget = process.env.EXTENSION_TARGET === 'firefox'
 
 type RecommendVideo = {
   el: HTMLElement
@@ -121,18 +123,40 @@ export default class BilibiliVideoProvider extends WebProvider {
   }
 
   getDanmakus = switchLatest(async () => {
-    const { aid, cid } = await getVideoInfoFromUrl(location.href)
+    document.documentElement.setAttribute('dm-bili-danmaku-info-stage', 'start')
+    const { aid, cid } = isFirefoxTarget
+      ? await getVideoInfoFromUrlInPageWorld(location.href)
+      : await getVideoInfoFromUrl(location.href)
+    document.documentElement.setAttribute('dm-bili-danmaku-info-stage', 'done')
+    document.documentElement.setAttribute('dm-bili-danmaku-info-aid', String(aid))
+    document.documentElement.setAttribute('dm-bili-danmaku-info-cid', String(cid))
 
     const danmakus = await getDanmakus(aid, cid)
     return danmakus
   })
   async initDanmakus() {
+    document.documentElement.setAttribute('dm-bili-danmaku-state', 'loading')
     const [err, danmakus] = await tryCatch(() => this.getDanmakus())
 
     if (err) {
+      document.documentElement.setAttribute('dm-bili-danmaku-state', 'error')
+      document.documentElement.setAttribute(
+        'dm-bili-danmaku-error',
+        err.message || String(err),
+      )
       toast.error(t('error.danmakuLoad'))
     } else {
-      this.danmakuEngine?.setDanmakus(danmakus)
+      document.documentElement.setAttribute('dm-bili-danmaku-state', 'fetched')
+      document.documentElement.setAttribute(
+        'dm-bili-danmaku-count',
+        String(danmakus.length),
+      )
+      await this.danmakuEngine?.setDanmakus(danmakus)
+      document.documentElement.setAttribute('dm-bili-danmaku-state', 'loaded')
+      document.documentElement.setAttribute(
+        'dm-bili-danmaku-count',
+        String(danmakus.length),
+      )
     }
   }
 
